@@ -1,0 +1,11 @@
+# Playwright session
+storage/state.json
+
+# binaries
+*.exe
+
+# logs
+*.log
+
+# enviroments
+.env
