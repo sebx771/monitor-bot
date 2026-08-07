@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	checkInterval = 1 * time.Minute // Frecuencia de revisión del servidor
-	errCooldown   = 2 * time.Minute // Tiempo de espera si falla Aternos
+	checkInterval = 60 * time.Minute // Frecuencia de revisión del servidor
+	errCooldown   = 70 * time.Minute // Tiempo de espera si falla Aternos
 )
 
 func main() {
