@@ -5,6 +5,19 @@ Todas las cambios notables de este proyecto se documentarán en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.1.0] - 2026-08-07
+
+### Added
+
+- **Servicio con el pipeline del bot** (`internal/services`): `BotService` que orquesta la verificación del servidor y su arranque automático.
+- **Configuración centralizada** (`internal/config`): struct `Config` con carga de `.env`, validación de variables obligatorias y preparación del archivo de almacenamiento de sesión.
+- **Integración del servicio en el arranque del worker**: `cmd/main.go` consume la configuración centralizada y elimina la lectura repetitiva de variables de entorno.
+
+### Changed
+
+- **Tiempos de revisión periódica del servidor**: revisión cada 60 minutos y cooldown de 70 minutos ante fallos de Aternos.
+- **Documentación**: mejoras en el README, quitando el enfoque exclusivo en Aternos, y adición de este changelog.
+
 ## [1.0.0] - 2026-08-04
 
 ### Added
