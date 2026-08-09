@@ -82,7 +82,7 @@ func (c *Client) StartService(project string, service Service) error {
 		return err
 	}
 
-	req.Header.Set("Authorization", "aivenv1 "+c.token)
+	req.Header.Set("Authorization", "Bearer "+c.token)
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := c.httpClient.Do(req)
