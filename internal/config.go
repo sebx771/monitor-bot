@@ -15,6 +15,9 @@ type Config struct {
 
 	serverId string
 	storagePath string
+
+	aivenProject string
+	aivenToken string
 }
 
 func NewConfig() (*Config, error) {
@@ -83,10 +86,22 @@ func (con *Config) GetValues() error{
 	if path == ""{
 	    return errors.New("La Variable STORAGE_PATH es obligatoria")
 	}
+
+	project := os.Getenv("AIVEN_PROJECT")
+	if project == ""{
+		return errors.New("La Variable AIVEN_PROJECT es obligatoria")
+	}
+
+	token := os.Getenv("AIVEN_TOKEN")
+	if token == ""{
+		return errors.New("La Variable AIVEN_TOKEN es obligatoria")
+	}
 	con.hostMC= host
 	con.portMC= uint16(port)
 	con.serverId= server
 	con.storagePath= path
+	con.aivenProject= project
+	con.aivenToken= token
 
   return nil
 }
@@ -106,6 +121,14 @@ func (con *Config) GetServerID() string {
 
 func (con *Config) GetStoragePath() string {
 	return con.storagePath
+}
+
+func (con *Config) GetAivenProject() string {
+	return con.aivenProject
+}
+
+func (con *Config) GetAivenToken() string {
+	return con.aivenToken
 }
 
 
