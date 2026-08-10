@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"time"
 )
 
 type Client struct {
 	token      string
+	baseURL    string
 	httpClient *http.Client
 }
 
@@ -22,16 +25,25 @@ type ServicesResponse struct {
 	Services []Service `json:"services"`
 }
 
+const (
+	requestTimeout = 30 * time.Second
+	apiBaseURL     = "https://api.aiven.io"
+)
+
 func NewClient(token string) *Client {
 	return &Client{
-		token:      token,
-		httpClient: &http.Client{},
+		token:   token,
+		baseURL: apiBaseURL,
+		httpClient: &http.Client{
+			Timeout: requestTimeout,
+		},
 	}
 }
 
 func (c *Client) GetServices(project string) ([]Service, error) {
 	url := fmt.Sprintf(
-		"https://api.aiven.io/v1/project/%s/service",
+		"%s/v1/project/%s/service",
+		c.baseURL,
 		project,
 	)
 
@@ -40,7 +52,11 @@ func (c *Client) GetServices(project string) ([]Service, error) {
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", "aivenv1 "+c.token)
+	req.Header.Set("Authorization", "Bearer "+c.token)
+    log.Printf("Aiven request project=%s tokenPrefix=%s",
+    project,
+    c.token[:8],
+    ) 
 
 	res, err := c.httpClient.Do(req)
 	if err != nil {
@@ -66,7 +82,8 @@ func (c *Client) GetServices(project string) ([]Service, error) {
 
 func (c *Client) StartService(project string, service Service) error {
 	url := fmt.Sprintf(
-		"https://api.aiven.io/v1/project/%s/service/%s",
+		"%s/v1/project/%s/service/%s",
+		c.baseURL,
 		project,
 		service.Name,
 	)
@@ -82,7 +99,7 @@ func (c *Client) StartService(project string, service Service) error {
 		return err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+c.token)
+	req.Header.Set("Authorization", "aivenv1 "+c.token)
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := c.httpClient.Do(req)
