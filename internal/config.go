@@ -2,11 +2,17 @@ package internal
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 )
+
+type Credential struct {
+	Token   string
+	Project string
+}
 
 type Config struct {
 	
@@ -16,8 +22,7 @@ type Config struct {
 	serverId string
 	storagePath string
 
-	aivenProject string
-	aivenToken string
+	aivenCredentials []Credential
 }
 
 func NewConfig() (*Config, error) {
@@ -87,23 +92,62 @@ func (con *Config) GetValues() error{
 	    return errors.New("La Variable STORAGE_PATH es obligatoria")
 	}
 
-	project := os.Getenv("AIVEN_PROJECT")
-	if project == ""{
-		return errors.New("La Variable AIVEN_PROJECT es obligatoria")
+	credentials, err := loadAivenCredentials()
+	if err != nil {
+		return err
 	}
 
-	token := os.Getenv("AIVEN_TOKEN")
-	if token == ""{
-		return errors.New("La Variable AIVEN_TOKEN es obligatoria")
-	}
-	con.hostMC= host
-	con.portMC= uint16(port)
-	con.serverId= server
-	con.storagePath= path
-	con.aivenProject= project
-	con.aivenToken= token
+	con.hostMC = host
+	con.portMC = uint16(port)
+	con.serverId = server
+	con.storagePath = path
+	con.aivenCredentials = credentials
 
-  return nil
+	return nil
+}
+
+// loadAivenCredentials lee las credenciales indexadas AIVEN_TOKEN_i /
+// AIVEN_PROJECT_i hasta que no exista la variable con el índice siguiente.
+// Si no hay credenciales indexadas, usa las legacy AIVEN_TOKEN/AIVEN_PROJECT.
+func loadAivenCredentials() ([]Credential, error) {
+	credentials := []Credential{}
+
+	for i := 1; ; i++ {
+		token := os.Getenv(fmt.Sprintf("AIVEN_TOKEN_%d", i))
+		project := os.Getenv(fmt.Sprintf("AIVEN_PROJECT_%d", i))
+
+		if token == "" && project == "" {
+			break
+		}
+
+		if token == "" || project == "" {
+			return nil, fmt.Errorf(
+				"Las Variables AIVEN_TOKEN_%d y AIVEN_PROJECT_%d deben estar ambas definidas",
+				i, i,
+			)
+		}
+
+		credentials = append(credentials, Credential{
+			Token:   token,
+			Project: project,
+		})
+	}
+
+	if len(credentials) == 0 {
+		token := os.Getenv("AIVEN_TOKEN")
+		project := os.Getenv("AIVEN_PROJECT")
+
+		if token != "" && project != "" {
+			return []Credential{{Token: token, Project: project}}, nil
+		}
+
+		return nil, errors.New(
+			"Se requiere al menos una credencial AIVEN (AIVEN_TOKEN_1/AIVEN_PROJECT_1 " +
+				"o las legacy AIVEN_TOKEN/AIVEN_PROJECT)",
+		)
+	}
+
+	return credentials, nil
 }
 
 //getters
@@ -123,13 +167,8 @@ func (con *Config) GetStoragePath() string {
 	return con.storagePath
 }
 
-func (con *Config) GetAivenProject() string {
-	return con.aivenProject
+func (con *Config) GetAivenCredentials() []Credential{
+    return con.aivenCredentials
 }
-
-func (con *Config) GetAivenToken() string {
-	return con.aivenToken
-}
-
 
 
