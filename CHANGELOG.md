@@ -5,6 +5,25 @@ Todas las cambios notables de este proyecto se documentarán en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.2.0] - 2026-08-09
+
+### Added
+
+- **Módulo Aiven** (`internal/aiven`): cliente HTTP para interactuar con la API de Aiven y checker para revisar el estado de servicios.
+  - `client.go`: cliente con métodos `GetServices` y `StartService`, manejo de autenticación Bearer/aivenv1 y timeouts.
+  - `checker.go`: lógica de verificación de proyectos que detecta servicios apagados (`POWEROFF`) y los inicia automáticamente.
+  - Pruebas unitarias del checker en `internal/aiven/checker_test.go`.
+- **Soporte multi-proyecto**: configuración indexada de credenciales (`AIVEN_TOKEN_1`, `AIVEN_PROJECT_1`, etc.) con fallback a variables legacy (`AIVEN_TOKEN`, `AIVEN_PROJECT`).
+- **Ejecución paralela de workers** (`cmd/main.go`): orquestación de dos workers concurrentes mediante goroutines y `sync.WaitGroup`.
+  - Worker de Minecraft (Aternos): intervalo de 24 horas, cooldown de 70 minutos.
+  - Worker de Aiven: intervalo de 60 minutos, cooldown de 30 minutos.
+- **Tarea Aiven compuesta**: `buildAivenTask` itera sobre todas las credenciales configuradas; un fallo en un proyecto no aborta el resto, y los errores se combinan con `errors.Join` para activar el cooldown solo si al menos una API falló.
+
+### Changed
+
+- Documentación actualizada en README para reflejar el nuevo módulo de Aiven y la ejecución paralela de workers.
+- Mejoras en la configuración centralizada para soportar múltiples credenciales de API.
+
 ## [1.1.0] - 2026-08-07
 
 ### Added
