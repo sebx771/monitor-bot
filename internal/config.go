@@ -22,15 +22,16 @@ type Config struct {
 	serverId string
 	storagePath string
 
+	headless bool
 	aivenCredentials []Credential
 }
 
 func NewConfig() (*Config, error) {
 	config := &Config{}
 
-	if err := loadEnv(".env"); err != nil {
-		return nil, err
-	}
+	if err := loadEnv(".env"); err != nil && !os.IsNotExist(err) {
+    return nil, err
+}
 
 	if err := config.GetValues(); err != nil {
 		return nil, err
@@ -92,6 +93,12 @@ func (con *Config) GetValues() error{
 	    return errors.New("La Variable STORAGE_PATH es obligatoria")
 	}
 
+	headless := os.Getenv("HEADLESS")
+	if headless == ""{
+	    return errors.New("La Variable HEADLESS es obligatoria")
+	}
+
+
 	credentials, err := loadAivenCredentials()
 	if err != nil {
 		return err
@@ -99,6 +106,7 @@ func (con *Config) GetValues() error{
 
 	con.hostMC = host
 	con.portMC = uint16(port)
+	con.headless= headless == "true"
 	con.serverId = server
 	con.storagePath = path
 	con.aivenCredentials = credentials
@@ -172,3 +180,6 @@ func (con *Config) GetAivenCredentials() []Credential{
 }
 
 
+func (con *Config) GetHeadless() bool {
+    return con.headless
+}
