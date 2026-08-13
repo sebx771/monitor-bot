@@ -13,11 +13,13 @@ type Browser struct {
 	browser  playwright.Browser
 	context playwright.BrowserContext
 
+	headless bool
 	running bool
 }
 
-func NewBrowser() *Browser {
+func NewBrowser(headless bool) *Browser {
 	return &Browser{
+		headless: headless,
 		running: false,
 	}
 }
@@ -32,7 +34,7 @@ func (b *Browser) Start(ctx context.Context) error {
 		return fmt.Errorf("error iniciando Playwright %w: ", err)
 	}
 	browser, err := pw.Chromium.Launch(playwright.BrowserTypeLaunchOptions{
-		Headless: playwright.Bool(false),
+		Headless: playwright.Bool(b.headless),
 	})
 
 	if err != nil {

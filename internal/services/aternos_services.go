@@ -15,13 +15,15 @@ type BotService struct {
 	checker     *minecraft.Checker
 	storagePath string
 	serverID    string
+	headless    bool
 }
 
-func NewBotService(checker *minecraft.Checker, storagePath, serverID string) *BotService {
+func NewBotService(checker *minecraft.Checker, storagePath, serverID string, headless bool) *BotService {
 	return &BotService{
 		checker:     checker,
 		storagePath: storagePath,
 		serverID:    serverID,
+		headless:    headless,
 	}
 }
 
@@ -59,7 +61,7 @@ func (s *BotService) CheckAndStartServer(ctx context.Context) error {
 
 // startAternosServer encapsula la apertura y cierre del navegador de forma segura
 func (s *BotService) startAternosServer(ctx context.Context) error {
-	browser := adapters.NewBrowser()
+	browser := adapters.NewBrowser(s.headless)
 
 	if err := browser.Start(ctx); err != nil {
 		return err
