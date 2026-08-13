@@ -38,7 +38,7 @@ func main() {
 
     //configuracion del bot para aternos 
 	checker := minecraft.NewChecker(cfg.GetHostMC(), cfg.GetPortMC())
-	botService := service.NewBotService(checker, cfg.GetStoragePath(), cfg.GetServerID())
+	botService := service.NewBotService(checker, cfg.GetStoragePath(), cfg.GetServerID(), cfg.GetHeadless())
 
 	w, err := worker.New(checkInterval, errCooldown, botService.CheckAndStartServer)
 	if err != nil {
