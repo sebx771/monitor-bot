@@ -24,6 +24,9 @@ type Config struct {
 
 	headless bool
 	aivenCredentials []Credential
+
+	githubToken string
+	gistId string
 }
 
 func NewConfig() (*Config, error) {
@@ -98,6 +101,15 @@ func (con *Config) GetValues() error{
 	    return errors.New("La Variable HEADLESS es obligatoria")
 	}
 
+	githubToken := os.Getenv("GITHUB_TOKEN")
+	if githubToken == ""{
+	    return errors.New("La Variable GITHUB_TOKEN es obligatoria")
+	}
+
+	gistId := os.Getenv("GIST_ID")
+	if gistId == ""{
+	    return errors.New("La Variable GIST_ID es obligatoria")
+	}
 
 	credentials, err := loadAivenCredentials()
 	if err != nil {
@@ -110,6 +122,8 @@ func (con *Config) GetValues() error{
 	con.serverId = server
 	con.storagePath = path
 	con.aivenCredentials = credentials
+	con.githubToken = githubToken
+	con.gistId = gistId
 
 	return nil
 }
@@ -182,4 +196,12 @@ func (con *Config) GetAivenCredentials() []Credential{
 
 func (con *Config) GetHeadless() bool {
     return con.headless
+}
+
+func (con *Config) GetGithubToken() string {
+    return con.githubToken
+}
+
+func (con *Config) GetGistID() string {
+    return con.gistId
 }
