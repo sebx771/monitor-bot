@@ -9,18 +9,21 @@ import (
 	"github.com/sebx771/monitor-bot/internal/adapters"
 	"github.com/sebx771/monitor-bot/internal/automation"
 	"github.com/sebx771/monitor-bot/internal/minecraft"
+	port "github.com/sebx771/monitor-bot/internal/ports"
 )
 
 type BotService struct {
 	checker     *minecraft.Checker
+	storage     port.StateStorage
 	storagePath string
 	serverID    string
 	headless    bool
 }
 
-func NewBotService(checker *minecraft.Checker, storagePath, serverID string, headless bool) *BotService {
+func NewBotService(checker *minecraft.Checker, storage port.StateStorage, storagePath, serverID string, headless bool) *BotService {
 	return &BotService{
 		checker:     checker,
+		storage:     storage,
 		storagePath: storagePath,
 		serverID:    serverID,
 		headless:    headless,
@@ -61,6 +64,9 @@ func (s *BotService) CheckAndStartServer(ctx context.Context) error {
 
 // startAternosServer encapsula la apertura y cierre del navegador de forma segura
 func (s *BotService) startAternosServer(ctx context.Context) error {
+	// Best-effort: si la descarga remota falla, se continúa con el archivo local
+	_ = s.syncStorageFromRemote(ctx)
+
 	browser := adapters.NewBrowser(s.headless)
 
 	if err := browser.Start(ctx); err != nil {
@@ -76,13 +82,77 @@ func (s *BotService) startAternosServer(ctx context.Context) error {
 		return err
 	}
 
-	defer func() {
-		if err := browser.SaveStorageState(s.storagePath); err != nil {
-			log.Printf("error guardando sesión: %v", err)
-		}
-	}()
-
 	bot := automation.NewAternosBot(browser)
+
+	if err := bot.Open(); err != nil {
+		return err
+	}
+
+	logged, err := bot.IsLogged()
+	if err != nil {
+		return err
+	}
+
+	if !logged {
+		log.Println("[Service] Sesión de Aternos no válida. Reintentando con cookies frescas del Gist...")
+
+		if err := s.retryWithFreshState(ctx, browser, bot); err != nil {
+			return err
+		}
+	}
+
+	if err := bot.StartServer(s.serverID); err != nil {
+		return err
+	}
+
+	// Solo en el camino exitoso: guardamos la sesión localmente y la
+	// sincronizamos con el Gist. Evita pisar cookies remotas buenas con
+	// cookies vencidas de ciclos fallidos.
+	if err := browser.SaveStorageState(s.storagePath); err != nil {
+		log.Printf("error guardando sesión: %v", err)
+	}
+
+	s.syncStorageToRemote(ctx)
+
+	return nil
+}
+
+// syncStorageFromRemote descarga el estado de sesión desde el almacenamiento
+// remoto (GitHub Gist) al archivo local. El error se loguea y se propaga para
+// que el llamador decida: el flujo actual lo trata como best-effort.
+func (s *BotService) syncStorageFromRemote(ctx context.Context) error {
+	if err := s.storage.DownloadState(ctx, s.storagePath); err != nil {
+		log.Printf("[Service] No se pudo descargar el estado remoto (se usa el local): %v", err)
+		return err
+	}
+
+	log.Println("[Service] Estado de sesión descargado desde el Gist.")
+	return nil
+}
+
+// syncStorageToRemote sube el archivo local de estado de sesión al
+// almacenamiento remoto (GitHub Gist). El error se loguea y no aborta el ciclo.
+func (s *BotService) syncStorageToRemote(ctx context.Context) error {
+	if err := s.storage.UploadState(ctx, s.storagePath); err != nil {
+		log.Printf("[Service] No se pudo subir el estado al Gist: %v", err)
+		return err
+	}
+
+	log.Println("[Service] Estado de sesión subido al Gist.")
+	return nil
+}
+
+// retryWithFreshState re-descarga el estado de sesión desde el Gist, recarga
+// el contexto del navegador (lo que invalida la página actual) y vuelve a
+// verificar la sesión. Retorna error si sigue siendo inválida.
+func (s *BotService) retryWithFreshState(ctx context.Context, browser *adapters.Browser, bot *automation.AternosBot) error {
+	if err := s.syncStorageFromRemote(ctx); err != nil {
+		return fmt.Errorf("reintento de sesión fallido: %w", err)
+	}
+
+	if err := browser.LoadStorageState(s.storagePath); err != nil {
+		return err
+	}
 
 	if err := bot.Open(); err != nil {
 		return err
@@ -97,7 +167,8 @@ func (s *BotService) startAternosServer(ctx context.Context) error {
 		return fmt.Errorf("sesión de Aternos no válida: inicia sesión manualmente")
 	}
 
-	return bot.StartServer(s.serverID)
+	log.Println("[Service] Sesión de Aternos recuperada desde el Gist.")
+	return nil
 }
 
 func (s *BotService) waitForOnline() error {

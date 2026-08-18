@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/sebx771/monitor-bot/internal"
+	"github.com/sebx771/monitor-bot/internal/adapters"
 	"github.com/sebx771/monitor-bot/internal/aiven"
 	"github.com/sebx771/monitor-bot/internal/minecraft"
 	service "github.com/sebx771/monitor-bot/internal/services"
@@ -38,7 +39,8 @@ func main() {
 
     //configuracion del bot para aternos 
 	checker := minecraft.NewChecker(cfg.GetHostMC(), cfg.GetPortMC())
-	botService := service.NewBotService(checker, cfg.GetStoragePath(), cfg.GetServerID(), cfg.GetHeadless())
+	gistClient := adapters.NewGitHubGistClient(cfg.GetGithubToken(), cfg.GetGistID())
+	botService := service.NewBotService(checker, gistClient, cfg.GetStoragePath(), cfg.GetServerID(), cfg.GetHeadless())
 
 	w, err := worker.New(checkInterval, errCooldown, botService.CheckAndStartServer)
 	if err != nil {
