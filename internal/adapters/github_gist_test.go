@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 )
+
 // test rapido en caso que el archivo no se encuentre
 func TestUploadState_FileNotFound(t *testing.T) {
 	client := NewGitHubGistClient("fake-token", "fake-gist-id")
@@ -18,17 +19,18 @@ func TestUploadState_FileNotFound(t *testing.T) {
 		t.Fatal("se esperaba un error cuando el archivo no existe")
 	}
 }
+
 // test rapido para verificar el exito de la funcion
-func TestUploadState_Success(t *testing.T){
+func TestUploadState_Success(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    w.WriteHeader(http.StatusOK)
-   }))
-   defer server.Close()
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
 
-   client := NewGitHubGistClient("fake-token", "fake-gist-id")
-   client.baseURL = server.URL
+	client := NewGitHubGistClient("fake-token", "fake-gist-id")
+	client.baseURL = server.URL
 
-   dir := t.TempDir()
+	dir := t.TempDir()
 
 	filePath := filepath.Join(dir, "state.json")
 	err := os.WriteFile(filePath, []byte(`{"test":"hello"}`), 0644)
@@ -38,22 +40,22 @@ func TestUploadState_Success(t *testing.T){
 	}
 	err = client.UploadState(context.Background(), filePath)
 
-    if err != nil {
-      t.Fatalf("se esperaba nil, se obtuvo: %v", err)
-}
+	if err != nil {
+		t.Fatalf("se esperaba nil, se obtuvo: %v", err)
+	}
 }
 
 // test rapido para verificar el fracaso de la funcion con error 500
-func TestUploadState_Error(t *testing.T){
+func TestUploadState_Error(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    w.WriteHeader(http.StatusInternalServerError)
-   }))
-   defer server.Close()
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
 
-   client := NewGitHubGistClient("fake-token", "fake-gist-id")
-   client.baseURL = server.URL
+	client := NewGitHubGistClient("fake-token", "fake-gist-id")
+	client.baseURL = server.URL
 
-   dir := t.TempDir()
+	dir := t.TempDir()
 
 	filePath := filepath.Join(dir, "state.json")
 	err := os.WriteFile(filePath, []byte(`{"test":"hello"}`), 0644)
@@ -63,9 +65,9 @@ func TestUploadState_Error(t *testing.T){
 	}
 	err = client.UploadState(context.Background(), filePath)
 
-    if err == nil {
-      t.Fatalf("se esperaba un error, se obtuvo: %v", err)
-}
+	if err == nil {
+		t.Fatalf("se esperaba un error, se obtuvo: %v", err)
+	}
 }
 
 // test rapido para verificar el exito de la descarga y el contenido guardado

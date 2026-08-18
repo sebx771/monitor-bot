@@ -5,6 +5,26 @@ Todas las cambios notables de este proyecto se documentarán en este archivo.
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.3.0] - 2026-08-18
+
+### Added
+
+- **Port `StateStorage`** (`internal/ports/state_storage.go`): interfaz que abstrae el almacenamiento remoto del archivo de estado de sesión con `DownloadState` y `UploadState`.
+- **Adapter de GitHub Gist** (`internal/adapters/github_gist.go`): implementa `StateStorage` usando la API de GitHub para descargar y actualizar el estado de sesión en un Gist.
+  - Autenticación Bearer, cabeceras `application/vnd.github+json`, timeout de 30 segundos y creación automática de directorios.
+  - Pruebas unitarias en `internal/adapters/github_gist_test.go`.
+- **Sincronización de sesión con GitHub Gist** (`internal/services/aternos_services.go`): `BotService` descarga el estado de sesión desde el Gist antes de iniciar el navegador y lo sube tras cada uso; reintenta el ciclo ante cookies inválidas.
+- **Nuevas variables de entorno** (`internal/config.go`):
+  - `HEADLESS`: controla el modo headless de Playwright (`internal/adapters/playwright.go`).
+  - `GITHUB_TOKEN` y `GIST_ID`: token y ID del Gist para la sincronización de sesión.
+- **Dockerfile multi-etapa**: build con `golang:1.24-bookworm` y runtime `debian:bookworm-slim`, con directorio `/app/storage` para el deploy en producción.
+
+### Changed
+
+- **Modo producción Aiven** (`cmd/main.go`): se comenta la inicialización del bot de Aternos, dejando únicamente activo el worker de Aiven para el deploy.
+- **Formateo de código**: se aplica `go fmt` en `internal/aiven`, `internal/config.go`, `internal/minecraft` y `internal/ports`.
+- **`.env.example`**: documenta las nuevas variables de entorno para Gist y headless.
+
 ## [1.2.0] - 2026-08-09
 
 ### Added

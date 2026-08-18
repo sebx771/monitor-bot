@@ -9,24 +9,23 @@ import (
 )
 
 type Browser struct {
-	pw  *playwright.Playwright
-	browser  playwright.Browser
+	pw      *playwright.Playwright
+	browser playwright.Browser
 	context playwright.BrowserContext
 
 	headless bool
-	running bool
+	running  bool
 }
 
 func NewBrowser(headless bool) *Browser {
 	return &Browser{
 		headless: headless,
-		running: false,
+		running:  false,
 	}
 }
 
-
 func (b *Browser) Start(ctx context.Context) error {
-	if b.running  {
+	if b.running {
 		return nil
 	}
 	pw, err := playwright.Run()
@@ -41,8 +40,6 @@ func (b *Browser) Start(ctx context.Context) error {
 		pw.Stop()
 		return fmt.Errorf("error iniciando Chromium: %w", err)
 	}
-
-
 
 	b.pw = pw
 	b.browser = browser
@@ -81,7 +78,6 @@ func (b *Browser) LoadStorageState(path string) error {
 	return nil
 }
 
-
 func (b *Browser) SaveStorageState(path string) error {
 	if !b.running {
 		return errors.New("browser no iniciado")
@@ -91,7 +87,7 @@ func (b *Browser) SaveStorageState(path string) error {
 		return errors.New("no existe un contexto activo")
 	}
 
-	_,err := b.context.StorageState(
+	_, err := b.context.StorageState(
 		playwright.BrowserContextStorageStateOptions{
 			Path: playwright.String(path),
 		},
@@ -104,15 +100,13 @@ func (b *Browser) SaveStorageState(path string) error {
 	return nil
 }
 
-
 func (b *Browser) NewPage() (playwright.Page, error) {
-    if !b.running {
-        return nil, errors.New("browser no iniciado")
-    }
+	if !b.running {
+		return nil, errors.New("browser no iniciado")
+	}
 
-    return b.context.NewPage()
+	return b.context.NewPage()
 }
-
 
 func (b *Browser) Stop() error {
 	// cerramos de forma jerarquica los componentes playwright
@@ -138,23 +132,21 @@ func (b *Browser) Stop() error {
 	return stopErr
 }
 
-func (b *Browser) Restart(ctx context.Context) error{
-	if !b.running{
+func (b *Browser) Restart(ctx context.Context) error {
+	if !b.running {
 		return fmt.Errorf("El Browser se encuentra apagado")
 	}
-    err:= b.Stop()
+	err := b.Stop()
 	if err != nil {
-		return fmt.Errorf("error al apagar Browser: %w",err)
+		return fmt.Errorf("error al apagar Browser: %w", err)
 	}
 	err = b.Start(ctx)
-	if err != nil{
-		return fmt.Errorf("error al iniciar Browser: %w ",err)
+	if err != nil {
+		return fmt.Errorf("error al iniciar Browser: %w ", err)
 	}
 
 	return nil
 }
-
-
 
 func (b *Browser) IsRunning() bool {
 	return b.running
