@@ -1,0 +1,8 @@
+.git
+.github
+.env
+.env.*
+storage/state.json
+*.test
+README.md
+CHANGELOG.md
