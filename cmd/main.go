@@ -12,16 +12,22 @@ import (
 	"time"
 
 	"github.com/sebx771/monitor-bot/internal"
-	"github.com/sebx771/monitor-bot/internal/adapters"
 	"github.com/sebx771/monitor-bot/internal/aiven"
+
+	// DEPENDENCIAS BOT DE ATERNOS 
+
+/* 	"github.com/sebx771/monitor-bot/internal/adapters"
 	"github.com/sebx771/monitor-bot/internal/minecraft"
-	service "github.com/sebx771/monitor-bot/internal/services"
+	service "github.com/sebx771/monitor-bot/internal/services" */
+
+
+
 	"github.com/sebx771/monitor-bot/internal/worker"
 )
 
 const (
-	checkInterval = 1440 * time.Minute // Frecuencia de revisión del servidor 
-	errCooldown   = 70 * time.Minute // Tiempo de espera si falla Aternos
+	checkInterval = 1440 * time.Minute // Frecuencia de revisión del servidor
+	errCooldown   = 70 * time.Minute   // Tiempo de espera si falla Aternos
 
 	aivenInterval = 60 * time.Minute // Frecuencia de revisión de servicios Aiven
 	aivenCooldown = 30 * time.Minute // Tiempo de espera si falla la API de Aiven
@@ -37,16 +43,15 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-    //configuracion del bot para aternos 
-	checker := minecraft.NewChecker(cfg.GetHostMC(), cfg.GetPortMC())
+	//configuracion del bot para aternos
+/* 	checker := minecraft.NewChecker(cfg.GetHostMC(), cfg.GetPortMC())
 	gistClient := adapters.NewGitHubGistClient(cfg.GetGithubToken(), cfg.GetGistID())
 	botService := service.NewBotService(checker, gistClient, cfg.GetStoragePath(), cfg.GetServerID(), cfg.GetHeadless())
 
 	w, err := worker.New(checkInterval, errCooldown, botService.CheckAndStartServer)
 	if err != nil {
 		log.Fatalf("Error al inicializar el worker: %v", err)
-	}
-    
+	} */
 
 	aivenTask := buildAivenTask(cfg.GetAivenCredentials())
 	wAiven, err := worker.New(aivenInterval, aivenCooldown, aivenTask)
@@ -54,19 +59,19 @@ func main() {
 		log.Fatalf("Error al inicializar el worker de Aiven: %v", err)
 	}
 
-	log.Printf("Iniciando Monitor Bot (Intervalo: %s, Cooldown: %s)...", checkInterval, errCooldown)
+	//log.Printf("Iniciando Monitor Bot (Intervalo: %s, Cooldown: %s)...", checkInterval, errCooldown)
 	log.Printf("Iniciando Worker Aiven (Intervalo: %s, Cooldown: %s)...", aivenInterval, aivenCooldown)
 
 	//  Activación de los Workers en paralelo
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(1)
 
-	go func() {
+/* 	go func() {
 		defer wg.Done()
 		if err := w.Run(ctx); err != nil {
 			log.Printf("Worker de Minecraft finalizó con error: %v", err)
 		}
-	}()
+	}() */
 
 	go func() {
 		defer wg.Done()
