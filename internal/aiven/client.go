@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 )
@@ -53,10 +52,6 @@ func (c *Client) GetServices(project string) ([]Service, error) {
 	}
 
 	req.Header.Set("Authorization", "Bearer "+c.token)
-    log.Printf("Aiven request project=%s tokenPrefix=%s",
-    project,
-    c.token[:8],
-    ) 
 
 	res, err := c.httpClient.Do(req)
 	if err != nil {

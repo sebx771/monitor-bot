@@ -15,26 +15,25 @@ type Credential struct {
 }
 
 type Config struct {
-	
 	hostMC string
 	portMC uint16
 
-	serverId string
+	serverId    string
 	storagePath string
 
-	headless bool
+	headless         bool
 	aivenCredentials []Credential
 
 	githubToken string
-	gistId string
+	gistId      string
 }
 
 func NewConfig() (*Config, error) {
 	config := &Config{}
 
 	if err := loadEnv(".env"); err != nil && !os.IsNotExist(err) {
-    return nil, err
-}
+		return nil, err
+	}
 
 	if err := config.GetValues(); err != nil {
 		return nil, err
@@ -75,40 +74,40 @@ func ensureStorageFile(path string) error {
 	return os.WriteFile(path, []byte("{}"), 0o644)
 }
 
-func (con *Config) GetValues() error{
+func (con *Config) GetValues() error {
 	port, err := strconv.ParseUint(os.Getenv("PORT"), 10, 16)
 	if err != nil {
 		return err
 	}
 
 	host := os.Getenv("HOST")
-	if host == ""{
-	  return errors.New("La Variable Host es obligatoria")
+	if host == "" {
+		return errors.New("La Variable Host es obligatoria")
 	}
 
 	server := os.Getenv("SERVER_ID")
-	if server == ""{
+	if server == "" {
 		return errors.New("La Variable SERVER_ID es obligatoria")
 	}
 
 	path := os.Getenv("STORAGE_PATH")
-	if path == ""{
-	    return errors.New("La Variable STORAGE_PATH es obligatoria")
+	if path == "" {
+		return errors.New("La Variable STORAGE_PATH es obligatoria")
 	}
 
 	headless := os.Getenv("HEADLESS")
-	if headless == ""{
-	    return errors.New("La Variable HEADLESS es obligatoria")
+	if headless == "" {
+		return errors.New("La Variable HEADLESS es obligatoria")
 	}
 
 	githubToken := os.Getenv("GITHUB_TOKEN")
-	if githubToken == ""{
-	    return errors.New("La Variable GITHUB_TOKEN es obligatoria")
+	if githubToken == "" {
+		return errors.New("La Variable GITHUB_TOKEN es obligatoria")
 	}
 
 	gistId := os.Getenv("GIST_ID")
-	if gistId == ""{
-	    return errors.New("La Variable GIST_ID es obligatoria")
+	if gistId == "" {
+		return errors.New("La Variable GIST_ID es obligatoria")
 	}
 
 	credentials, err := loadAivenCredentials()
@@ -118,7 +117,7 @@ func (con *Config) GetValues() error{
 
 	con.hostMC = host
 	con.portMC = uint16(port)
-	con.headless= headless == "true"
+	con.headless = headless == "true"
 	con.serverId = server
 	con.storagePath = path
 	con.aivenCredentials = credentials
@@ -189,19 +188,18 @@ func (con *Config) GetStoragePath() string {
 	return con.storagePath
 }
 
-func (con *Config) GetAivenCredentials() []Credential{
-    return con.aivenCredentials
+func (con *Config) GetAivenCredentials() []Credential {
+	return con.aivenCredentials
 }
 
-
 func (con *Config) GetHeadless() bool {
-    return con.headless
+	return con.headless
 }
 
 func (con *Config) GetGithubToken() string {
-    return con.githubToken
+	return con.githubToken
 }
 
 func (con *Config) GetGistID() string {
-    return con.gistId
+	return con.gistId
 }

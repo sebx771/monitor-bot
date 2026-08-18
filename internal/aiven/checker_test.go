@@ -11,8 +11,8 @@ import (
 
 func newTestClient(token, baseURL string) *Client {
 	return &Client{
-		token:   token,
-		baseURL: baseURL,
+		token:      token,
+		baseURL:    baseURL,
 		httpClient: &http.Client{},
 	}
 }
