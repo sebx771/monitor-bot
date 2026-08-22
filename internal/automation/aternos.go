@@ -2,12 +2,14 @@ package automation
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/mxschmitt/playwright-go"
+	"github.com/sebx771/monitor-bot/internal/logger"
 	port "github.com/sebx771/monitor-bot/internal/ports"
 )
+
+var log = logger.NewLogger("ATERNOS")
 
 func dialogSelectors() []string {
 	return []string{
@@ -74,11 +76,11 @@ func (a *AternosBot) OpenServers() error {
 	url := a.page.URL()
 	title, err := a.page.Title()
 
-	log.Printf("[Bot] URL actual: %s", url)
+	log.Debug("URL actual", "url", url)
 	if err != nil {
-		log.Printf("[Bot] Error obteniendo título: %v", err)
+		log.Error("error obteniendo título", "error", err)
 	} else {
-		log.Printf("[Bot] Título: %s", title)
+		log.Debug("título obtenido", "titulo", title)
 	}
 
     if title == "Just a moment..." {
@@ -93,18 +95,18 @@ func (a *AternosBot) OpenServers() error {
 func (a *AternosBot) SelectServer(serverID string) error {
 	selector := fmt.Sprintf(`div.server-body[data-id="%s"]`, serverID)
 
-	fmt.Println("[Bot] Haciendo clic en el servidor de la lista...")
+	log.Info("haciendo clic en el servidor de la lista", "server_id", serverID)
 	if err := a.page.Locator(selector).Click(); err != nil {
 		return err
 	}
 
 	// ESPERA CLAVE: Esperamos a que la URL cambie a la página del panel (/server/)
-	fmt.Println("[Bot] Esperando a que cargue la página del panel...")
+	log.Info("esperando a que cargue la página del panel")
 	err := a.page.WaitForURL("**/server/**", playwright.PageWaitForURLOptions{
 		Timeout: playwright.Float(15000), // 15 segundos máximo
 	})
 	if err != nil {
-		fmt.Println("[Bot] Advertencia: La URL no cambió a tiempo, continuando...")
+		log.Warn("la URL no cambió a tiempo, continuando")
 	}
 
 	return nil
@@ -113,7 +115,7 @@ func (b *AternosBot) ClickStart() error {
 
 	start := b.page.Locator("#start")
 
-	fmt.Println("[Bot] Esperando a que el botón Start sea visible...")
+	log.Info("esperando a que el botón Start sea visible")
 
 	if err := start.WaitFor(playwright.LocatorWaitForOptions{
 		State:   playwright.WaitForSelectorStateVisible,
@@ -122,7 +124,7 @@ func (b *AternosBot) ClickStart() error {
 		return fmt.Errorf("el botón #start nunca apareció en la pantalla: %w", err)
 	}
 
-	fmt.Println("[Bot] Botón Start localizado. Enviando clic...")
+	log.Info("botón Start localizado, enviando clic")
 
 	// Usamos Force: true por si hay un banner transparente de publicidad sobre el botón
 	if err := start.Click(playwright.LocatorClickOptions{
@@ -131,7 +133,7 @@ func (b *AternosBot) ClickStart() error {
 		return fmt.Errorf("error al hacer clic en start: %w", err)
 	}
 
-	fmt.Println("[Bot] Clic enviado exitosamente. Revisando si aparece modal de confirmación...")
+	log.Info("clic enviado exitosamente, revisando si aparece modal de confirmación")
 
 	b.HandleDialogs()
 
@@ -154,7 +156,7 @@ func (a *AternosBot) HandleDialogs() error {
 		}
 
 		if err := locator.Click(); err != nil {
-			fmt.Println("No se pudo clickear el modal:", err)
+			log.Error("no se pudo clickear el modal", "modal", selector, "error", err)
 		}
 
 		time.Sleep(500 * time.Millisecond)

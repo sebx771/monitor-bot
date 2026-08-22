@@ -2,18 +2,21 @@ package aiven
 
 import (
 	"fmt"
-	"log"
+
+	"github.com/sebx771/monitor-bot/internal/logger"
 )
 
 type AivenChecker struct {
 	client  *Client
 	project string
+	log     *logger.Logger
 }
 
 func NewChecker(client *Client, project string) *AivenChecker {
 	return &AivenChecker{
 		client:  client,
 		project: project,
+		log:     logger.NewLogger("AIVEN"),
 	}
 }
 
@@ -26,18 +29,20 @@ func (c *AivenChecker) Check() error {
 	}
 
 	for _, service := range services {
-		log.Printf("[Aiven/%s] Service: %s | State: %s", c.project, service.Name, service.State)
+		c.log.Info("servicio revisado", "proyecto", c.project, "servicio", service.Name, "estado", service.State)
 
 		if service.State != "POWEROFF" {
 			continue
 		}
 
-		log.Printf("[Aiven/%s] Iniciando servicio: %s", c.project, service.Name)
+		c.log.Info("iniciando servicio", "proyecto", c.project, "servicio", service.Name)
 
 		if err := c.client.StartService(c.project, service); err != nil {
-			log.Printf(
-				"[Aiven/%s] error iniciando servicio %s: %v",
-				c.project, service.Name, err,
+			c.log.Error(
+				"error iniciando servicio",
+				"proyecto", c.project,
+				"servicio", service.Name,
+				"error", err,
 			)
 			continue
 		}

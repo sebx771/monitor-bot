@@ -3,14 +3,16 @@ package services
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/sebx771/monitor-bot/internal/adapters"
 	"github.com/sebx771/monitor-bot/internal/automation"
+	"github.com/sebx771/monitor-bot/internal/logger"
 	"github.com/sebx771/monitor-bot/internal/minecraft"
 	port "github.com/sebx771/monitor-bot/internal/ports"
 )
+
+var log = logger.NewLogger("SERVICE")
 
 type BotService struct {
 	checker     *minecraft.Checker
@@ -32,33 +34,33 @@ func NewBotService(checker *minecraft.Checker, storage port.StateStorage, storag
 
 // CheckAndStartServer es la función que cumple con el tipo `Task` del Worker
 func (s *BotService) CheckAndStartServer(ctx context.Context) error {
-	log.Println("[Service] Verificando estado del servidor Minecraft...")
+	log.Info("verificando estado del servidor Minecraft")
 
 	online, err := s.checker.IsOnline()
 	if err != nil {
-		log.Println("[Service] Servidor no responde al ping:", err)
+		log.Warn("el servidor no responde al ping", "error", err)
 		online = false
 	}
 
 	if online {
-		log.Println("[Service] El servidor ya está online. Omitiendo encendido.")
+		log.Info("el servidor ya está online, omitiendo encendido")
 		return nil
 	}
 
-	log.Println("[Service] Servidor offline. Iniciando automatización de Aternos...")
+	log.Info("servidor offline, iniciando automatización de Aternos")
 
 	// Solo levantamos el navegador si el servidor REALMENTE está offline
 	if err := s.startAternosServer(ctx); err != nil {
 		return fmt.Errorf("falló el encendido del servidor: %w", err)
 	}
 
-	log.Println("[Service] Clic de inicio enviado, esperando a que el servidor esté online...")
+	log.Info("clic de inicio enviado, esperando a que el servidor esté online")
 
 	if err := s.waitForOnline(); err != nil {
 		return fmt.Errorf("el servidor no confirmó estar online: %w", err)
 	}
 
-	log.Println("[Service] ¡El servidor ya se encuentra online y listo para jugar!")
+	log.Info("el servidor ya se encuentra online y listo para jugar")
 	return nil
 }
 
@@ -74,7 +76,7 @@ func (s *BotService) startAternosServer(ctx context.Context) error {
 	}
 	defer func() {
 		if err := browser.Stop(); err != nil {
-			log.Printf("error cerrando browser: %v", err)
+			log.Error("error cerrando browser", "error", err)
 		}
 	}()
 
@@ -94,7 +96,7 @@ func (s *BotService) startAternosServer(ctx context.Context) error {
 	}
 
 	if !logged {
-		log.Println("[Service] Sesión de Aternos no válida. Reintentando con cookies frescas del Gist...")
+		log.Warn("sesión de Aternos no válida, reintentando con cookies frescas del Gist")
 
 		if err := s.retryWithFreshState(ctx, browser, bot); err != nil {
 			return err
@@ -109,7 +111,7 @@ func (s *BotService) startAternosServer(ctx context.Context) error {
 	// sincronizamos con el Gist. Evita pisar cookies remotas buenas con
 	// cookies vencidas de ciclos fallidos.
 	if err := browser.SaveStorageState(s.storagePath); err != nil {
-		log.Printf("error guardando sesión: %v", err)
+		log.Error("error guardando sesión", "error", err)
 	}
 
 	s.syncStorageToRemote(ctx)
@@ -122,11 +124,11 @@ func (s *BotService) startAternosServer(ctx context.Context) error {
 // que el llamador decida: el flujo actual lo trata como best-effort.
 func (s *BotService) syncStorageFromRemote(ctx context.Context) error {
 	if err := s.storage.DownloadState(ctx, s.storagePath); err != nil {
-		log.Printf("[Service] No se pudo descargar el estado remoto (se usa el local): %v", err)
+		log.Warn("no se pudo descargar el estado remoto, se usa el local", "error", err)
 		return err
 	}
 
-	log.Println("[Service] Estado de sesión descargado desde el Gist.")
+	log.Info("estado de sesión descargado desde el Gist")
 	return nil
 }
 
@@ -134,11 +136,11 @@ func (s *BotService) syncStorageFromRemote(ctx context.Context) error {
 // almacenamiento remoto (GitHub Gist). El error se loguea y no aborta el ciclo.
 func (s *BotService) syncStorageToRemote(ctx context.Context) error {
 	if err := s.storage.UploadState(ctx, s.storagePath); err != nil {
-		log.Printf("[Service] No se pudo subir el estado al Gist: %v", err)
+		log.Warn("no se pudo subir el estado al Gist", "error", err)
 		return err
 	}
 
-	log.Println("[Service] Estado de sesión subido al Gist.")
+	log.Info("estado de sesión subido al Gist")
 	return nil
 }
 
@@ -167,7 +169,7 @@ func (s *BotService) retryWithFreshState(ctx context.Context, browser *adapters.
 		return fmt.Errorf("sesión de Aternos no válida: inicia sesión manualmente")
 	}
 
-	log.Println("[Service] Sesión de Aternos recuperada desde el Gist.")
+	log.Info("sesión de Aternos recuperada desde el Gist")
 	return nil
 }
 
@@ -182,7 +184,7 @@ func (s *BotService) waitForOnline() error {
 		if err == nil && online {
 			return nil
 		}
-		log.Printf("[Service] Servidor aún offline, reintentando en %s...", onlinePollInterval)
+		log.Info("servidor aún offline, reintentando", "intervalo", onlinePollInterval)
 		time.Sleep(onlinePollInterval)
 	}
 

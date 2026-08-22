@@ -3,10 +3,13 @@ package worker
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 	"time"
+
+	"github.com/sebx771/monitor-bot/internal/logger"
 )
+
+var log = logger.NewLogger("WORKER")
 
 type Task func(ctx context.Context) error
 
@@ -71,7 +74,7 @@ func (w *Worker) Run(ctx context.Context) error {
 // Retorna true si la tarea falló para activar el cooldown.
 func (w *Worker) execute(ctx context.Context) bool {
 	if !w.mu.TryLock() {
-		log.Println("ciclo anterior aún en ejecución, se omite este ciclo")
+		log.Warn("ciclo anterior aún en ejecución, se omite este ciclo")
 		return false
 	}
 	defer w.mu.Unlock()
@@ -82,7 +85,7 @@ func (w *Worker) execute(ctx context.Context) bool {
 	}
 
 	if err := w.task(ctx); err != nil {
-		log.Printf("ciclo fallido: %v", err)
+		log.Error("ciclo fallido", "error", err)
 		return true
 	}
 

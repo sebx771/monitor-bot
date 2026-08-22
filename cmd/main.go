@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"sync"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/sebx771/monitor-bot/internal"
 	"github.com/sebx771/monitor-bot/internal/aiven"
+	"github.com/sebx771/monitor-bot/internal/logger"
 
 	// DEPENDENCIAS BOT DE ATERNOS 
 
@@ -26,17 +26,20 @@ import (
 )
 
 const (
-	checkInterval = 1440 * time.Minute // Frecuencia de revisión del servidor
-	errCooldown   = 70 * time.Minute   // Tiempo de espera si falla Aternos
+	//checkInterval = 1440 * time.Minute // Frecuencia de revisión del servidor
+	//errCooldown   = 70 * time.Minute   // Tiempo de espera si falla Aternos
 
 	aivenInterval = 60 * time.Minute // Frecuencia de revisión de servicios Aiven
 	aivenCooldown = 30 * time.Minute // Tiempo de espera si falla la API de Aiven
 )
 
 func main() {
+	log := logger.NewLogger("MAIN")
+
 	cfg, err := internal.NewConfig()
 	if err != nil {
-		log.Fatalf("Error cargando configuración: %v", err)
+		log.Error("error cargando configuración", "error", err)
+		os.Exit(1)
 	}
 
 	// Escuchar Ctrl+C para detener los workers limpiamente
@@ -56,11 +59,12 @@ func main() {
 	aivenTask := buildAivenTask(cfg.GetAivenCredentials())
 	wAiven, err := worker.New(aivenInterval, aivenCooldown, aivenTask)
 	if err != nil {
-		log.Fatalf("Error al inicializar el worker de Aiven: %v", err)
+		log.Error("error al inicializar el worker de Aiven", "error", err)
+		os.Exit(1)
 	}
 
 	//log.Printf("Iniciando Monitor Bot (Intervalo: %s, Cooldown: %s)...", checkInterval, errCooldown)
-	log.Printf("Iniciando Worker Aiven (Intervalo: %s, Cooldown: %s)...", aivenInterval, aivenCooldown)
+	log.Info("iniciando worker aiven", "intervalo", aivenInterval, "cooldown", aivenCooldown)
 
 	//  Activación de los Workers en paralelo
 	var wg sync.WaitGroup
@@ -76,13 +80,13 @@ func main() {
 	go func() {
 		defer wg.Done()
 		if err := wAiven.Run(ctx); err != nil {
-			log.Printf("Worker de Aiven finalizó con error: %v", err)
+			log.Error("worker de aiven finalizó con error", "error", err)
 		}
 	}()
 
 	wg.Wait()
 
-	log.Println("Aplicación finalizada correctamente.")
+	log.Info("aplicación finalizada correctamente")
 }
 
 // buildAivenTask ejecuta un checker por credencial. Un fallo en una API no
