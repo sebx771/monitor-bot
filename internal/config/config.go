@@ -9,9 +9,9 @@ import (
 
 
 type Config struct {
-	GlobalConfig  struct{} // de momento lo dejo asi , hasta que haga los struct reales de las config
-	AivenConfig   struct{}
-	AternosConfig struct{}
+	globalConfig  struct{} // de momento lo dejo asi , hasta que haga los struct reales de las config
+	aivenConfig   AivenConfig
+	aternosConfig  AternosConfig
 }
 
 func NewConfig() (*Config, error){
@@ -26,7 +26,19 @@ func NewConfig() (*Config, error){
 
 	// en este bloque ira la declaracion de las demas config para posteriormente instancear
 	//  la config raiz 
+	aiven,err:= NewAivenConfig()
+	if err!= nil {
+		return nil , err
+	}
 
+	aternos , err := NewAternosConfig()
+	if err != nil {
+		return nil , err
+	}
+
+	
+    config.aivenConfig= *aiven
+	config.aternosConfig= *aternos
 	
 
     return  config, nil

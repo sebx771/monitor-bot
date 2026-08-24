@@ -8,6 +8,7 @@ import (
 )
 
 type AternosConfig struct {
+	enabled     bool
 	host        string
 	port        uint16
 	serverId    string
@@ -22,6 +23,16 @@ type AternosConfig struct {
 func NewAternosConfig() (*AternosConfig, error) {
 	config := &AternosConfig{}
 
+	isEnabled,err:= GetEnabledVar("ATERNOS_ENABLED")
+	if err != nil {
+		return nil, err
+	}
+	config.enabled= isEnabled
+	if !config.enabled {
+      return config , nil
+	}
+	
+
 	if err := config.GetValues(); err != nil {
 		return nil, err
 	}
@@ -30,6 +41,8 @@ func NewAternosConfig() (*AternosConfig, error) {
 }
 
 func (At *AternosConfig) GetValues() error {
+
+	
 	port, err := strconv.ParseUint(os.Getenv("PORT"), 10, 16)
 	if err != nil {
 		return err
@@ -90,4 +103,36 @@ func ensureStorageFile(path string) error {
 	}
 
 	return os.WriteFile(path, []byte("{}"), 0o644)
+}
+
+func (At *AternosConfig) IsEnabled() bool {
+	return At.enabled
+}
+
+func (At *AternosConfig) GetHost() string {
+	return At.host
+}
+
+func (At *AternosConfig) GetPort() uint16 {
+	return At.port
+}
+
+func (At *AternosConfig) GetServerID() string {
+	return At.serverId
+}
+
+func (At *AternosConfig) GetStoragePath() string {
+	return At.storagePath
+}
+
+func (At *AternosConfig) IsHeadless() bool {
+	return At.headless
+}
+
+func (At *AternosConfig) GetGithubToken() string {
+	return At.githubToken
+}
+
+func (At *AternosConfig) GetGistID() string {
+	return At.gistId
 }

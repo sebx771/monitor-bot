@@ -12,11 +12,23 @@ type Credential struct {
 }
 
 type AivenConfig struct {
+	enabled bool
 	aivenCredentials []Credential
 }
 
 func NewAivenConfig() (*AivenConfig, error) {
 	config := &AivenConfig{}
+
+	isEnabled, err := GetEnabledVar("AIVEN_ENABLED")
+	if err != nil {
+		return nil, err
+	}
+
+	config.enabled = isEnabled
+
+	if !isEnabled {
+		return config, nil
+	}
 
 	if err := config.LoadAivenCredentials(); err != nil {
 		return nil, err
@@ -24,7 +36,6 @@ func NewAivenConfig() (*AivenConfig, error) {
 
 	return config, nil
 }
-
 func (a *AivenConfig) LoadAivenCredentials() error {
 	credentials := []Credential{}
 
@@ -71,4 +82,12 @@ func (a *AivenConfig) LoadAivenCredentials() error {
 	a.aivenCredentials = credentials
 
 	return nil
+}
+
+func (a *AivenConfig) IsEnabled() bool {
+	return a.enabled
+}
+
+func (a *AivenConfig) GetCredentials() []Credential {
+	return a.aivenCredentials
 }
