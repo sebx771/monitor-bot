@@ -1,17 +1,26 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func GetEnabledVar(name string) (bool, error) {
-
-	variable,err:= strconv.ParseBool(os.Getenv(name))
-	if err != nil {
-		return false , err
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		return false, nil
 	}
 
-	return variable , nil
-		
+	enabled, err := strconv.ParseBool(value)
+	if err != nil {
+		return false, fmt.Errorf(
+			"la variable %s debe ser un booleano (true/false), se recibió %q",
+			name,
+			value,
+		)
+	}
+
+	return enabled, nil
 }
