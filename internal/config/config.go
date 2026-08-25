@@ -45,6 +45,14 @@ func NewConfig() (*Config, error){
 
 }
 
+func (c *Config) GetAivenConfig() *AivenConfig {
+	return &c.aivenConfig
+}
+
+func (c *Config) GetAternosConfig() *AternosConfig {
+	return &c.aternosConfig
+}
+
 
 
 func loadEnv(path string) error {
