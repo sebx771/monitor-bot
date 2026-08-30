@@ -35,7 +35,7 @@ func (s *SupabaseConfig) LoadSupabaseCredentials() error {
 	token := os.Getenv("SUPABASE_TOKEN")
 
 	if token == "" {
-		return errors.New("se requiere SUPABASE_TOKEN")
+		return errors.New("SUPABASE_TOKEN is required")
 	}
 
 	s.Token = token
@@ -43,7 +43,7 @@ func (s *SupabaseConfig) LoadSupabaseCredentials() error {
 	return nil
 }
 
-func (s *SupabaseConfig) GetEnabled() bool {
+func (s *SupabaseConfig) IsEnabled() bool {
 	return s.Enabled
 }
 

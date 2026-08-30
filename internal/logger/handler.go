@@ -36,7 +36,7 @@ func (h *ConsoleHandler) Handle(ctx context.Context, record slog.Record) error {
 	b.WriteString(" ")
 	b.WriteString(fmt.Sprintf("%-5s", record.Level.String()))
 
-	// Buscar el módulo entre los atributos heredados
+	// Look for the module among the inherited attributes
 	var module string
 
 	for _, attr := range h.attrs {
@@ -57,7 +57,7 @@ func (h *ConsoleHandler) Handle(ctx context.Context, record slog.Record) error {
 	b.WriteString(" ")
 	b.WriteString(record.Message)
   
-	// aqui se recorre la lista de los atributos heredados (excepto el modulo)
+	// here we iterate over the inherited attributes (except the module)
 	for _, attr := range h.attrs {
 		if attr.Key == "module" {
 			continue
@@ -69,7 +69,7 @@ func (h *ConsoleHandler) Handle(ctx context.Context, record slog.Record) error {
 		b.WriteString(attr.Value.String())
 	}
 
-	// Atributos propios del log
+	// Log's own attributes
 	record.Attrs(func(attr slog.Attr) bool {
 		if attr.Key == "module" {
 			return true

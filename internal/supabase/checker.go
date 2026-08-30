@@ -21,7 +21,7 @@ func NewChecker(client *Client, logger *logger.Logger) *Checker {
 func (c *Checker) Check() error {
 	projects, err := c.client.ListProjects()
 	if err != nil {
-		return fmt.Errorf("error obteniendo proyectos de Supabase: %w", err)
+		return fmt.Errorf("error getting Supabase projects: %w", err)
 	}
 
 	for _, project := range projects {
@@ -30,14 +30,14 @@ func (c *Checker) Check() error {
 		}
 
 		c.logger.Info(
-			"proyecto de Supabase inactivo, intentando restaurar",
+			"Supabase project inactive, attempting to restore",
 			"project", project.Name,
 			"ref", project.Ref,
 		)
 
 		if err := c.client.RestoreProject(project.Ref); err != nil {
 			c.logger.Error(
-				"error restaurando proyecto de Supabase",
+				"error restoring Supabase project",
 				"project", project.Name,
 				"ref", project.Ref,
 				"error", err,
@@ -47,7 +47,7 @@ func (c *Checker) Check() error {
 		}
 
 		c.logger.Info(
-			"proyecto de Supabase restaurado",
+			"Supabase project restored",
 			"project", project.Name,
 			"ref", project.Ref,
 		)

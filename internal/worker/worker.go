@@ -23,11 +23,11 @@ type Worker struct {
 
 func New(interval, cooldown time.Duration, task Task) (*Worker, error) {
 	if interval <= 0 {
-		return nil, fmt.Errorf("interval debe ser mayor que cero")
+		return nil, fmt.Errorf("interval must be greater than zero")
 	}
 
 	if task == nil {
-		return nil, fmt.Errorf("task no puede ser nil")
+		return nil, fmt.Errorf("task cannot be nil")
 	}
 
 	return &Worker{
@@ -41,7 +41,7 @@ func (w *Worker) Run(ctx context.Context) error {
 	ticker := time.NewTicker(w.interval)
 	defer ticker.Stop()
 
-	// Ejecutar inmediatamente al arrancar la primera vez (Opcional)
+	// Run immediately on startup the first time (optional)
 	w.execute(ctx)
 
 	for {
@@ -52,17 +52,17 @@ func (w *Worker) Run(ctx context.Context) error {
 		case <-ticker.C:
 			failed := w.execute(ctx)
 
-			// Si falló y hay un cooldown configurado
+			// If it failed and a cooldown is configured
 			if failed && w.cooldown > 0 {
 				timer := time.NewTimer(w.cooldown)
 
 				select {
 				case <-ctx.Done():
-					timer.Stop() // Evita fuga de memoria
+					timer.Stop() // Avoids memory leak
 					return nil
 				case <-timer.C:
-					// Reiniciamos el ticker para que el intervalo de espera
-					// vuelva a contar A PARTIR de que terminó el cooldown
+					// Reset the ticker so the wait interval counts
+					// again FROM when the cooldown finished
 					ticker.Reset(w.interval)
 				}
 			}
@@ -70,22 +70,22 @@ func (w *Worker) Run(ctx context.Context) error {
 	}
 }
 
-// execute maneja el bloqueo y la ejecución de la tarea.
-// Retorna true si la tarea falló para activar el cooldown.
+// execute handles the locking and execution of the task.
+// Returns true if the task failed to trigger the cooldown.
 func (w *Worker) execute(ctx context.Context) bool {
 	if !w.mu.TryLock() {
-		log.Warn("ciclo anterior aún en ejecución, se omite este ciclo")
+		log.Warn("previous cycle still running, skipping this cycle")
 		return false
 	}
 	defer w.mu.Unlock()
 
-	// Si el contexto ya fue cancelado antes de empezar la tarea
+	// If the context was already cancelled before starting the task
 	if ctx.Err() != nil {
 		return false
 	}
 
 	if err := w.task(ctx); err != nil {
-		log.Error("ciclo fallido", "error", err)
+		log.Error("cycle failed", "error", err)
 		return true
 	}
 

@@ -20,28 +20,28 @@ func NewChecker(client *Client, project string) *AivenChecker {
 	}
 }
 
-// Check revisa los servicios del proyecto y enciende los apagados.
-// Un error en un servicio no detiene el chequeo del resto.
+// Check reviews the project's services and starts the ones that are off.
+// An error in one service does not stop checking the rest.
 func (c *AivenChecker) Check() error {
 	services, err := c.client.GetServices(c.project)
 	if err != nil {
-		return fmt.Errorf("error obteniendo Aiven services (proyecto %s): %w", c.project, err)
+		return fmt.Errorf("error getting Aiven services (project %s): %w", c.project, err)
 	}
 
 	for _, service := range services {
-		c.log.Info("servicio revisado", "proyecto", c.project, "servicio", service.Name, "estado", service.State)
+		c.log.Info("service checked", "project", c.project, "service", service.Name, "state", service.State)
 
 		if service.State != "POWEROFF" {
 			continue
 		}
 
-		c.log.Info("iniciando servicio", "proyecto", c.project, "servicio", service.Name)
+		c.log.Info("starting service", "project", c.project, "service", service.Name)
 
 		if err := c.client.StartService(c.project, service); err != nil {
 			c.log.Error(
-				"error iniciando servicio",
-				"proyecto", c.project,
-				"servicio", service.Name,
+				"error starting service",
+				"project", c.project,
+				"service", service.Name,
 				"error", err,
 			)
 			continue

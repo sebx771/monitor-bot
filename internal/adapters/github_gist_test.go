@@ -9,18 +9,18 @@ import (
 	"testing"
 )
 
-// test rapido en caso que el archivo no se encuentre
+// quick test for the case where the file is not found
 func TestUploadState_FileNotFound(t *testing.T) {
 	client := NewGitHubGistClient("fake-token", "fake-gist-id")
 
-	err := client.UploadState(context.Background(), "archivo-que-no-existe.json")
+	err := client.UploadState(context.Background(), "non-existent-file.json")
 
 	if err == nil {
-		t.Fatal("se esperaba un error cuando el archivo no existe")
+		t.Fatal("expected an error when the file does not exist")
 	}
 }
 
-// test rapido para verificar el exito de la funcion
+// quick test to verify the success of the function
 func TestUploadState_Success(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -41,11 +41,11 @@ func TestUploadState_Success(t *testing.T) {
 	err = client.UploadState(context.Background(), filePath)
 
 	if err != nil {
-		t.Fatalf("se esperaba nil, se obtuvo: %v", err)
+		t.Fatalf("expected nil, got: %v", err)
 	}
 }
 
-// test rapido para verificar el fracaso de la funcion con error 500
+// quick test to verify the failure of the function with error 500
 func TestUploadState_Error(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -66,15 +66,15 @@ func TestUploadState_Error(t *testing.T) {
 	err = client.UploadState(context.Background(), filePath)
 
 	if err == nil {
-		t.Fatalf("se esperaba un error, se obtuvo: %v", err)
+		t.Fatalf("expected an error, got: %v", err)
 	}
 }
 
-// test rapido para verificar el exito de la descarga y el contenido guardado
+// quick test to verify the success of the download and the saved content
 func TestDownloadState_Success(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer fake-token" {
-			t.Errorf("se esperaba el header Authorization con el token")
+			t.Errorf("expected the Authorization header with the token")
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"files":{"state.json":{"content":"{\"test\":\"hello\"}"}}}`))
@@ -89,7 +89,7 @@ func TestDownloadState_Success(t *testing.T) {
 
 	err := client.DownloadState(context.Background(), filePath)
 	if err != nil {
-		t.Fatalf("se esperaba nil, se obtuvo: %v", err)
+		t.Fatalf("expected nil, got: %v", err)
 	}
 
 	data, err := os.ReadFile(filePath)
@@ -97,11 +97,11 @@ func TestDownloadState_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 	if string(data) != `{"test":"hello"}` {
-		t.Fatalf("contenido inesperado: %s", string(data))
+		t.Fatalf("unexpected content: %s", string(data))
 	}
 }
 
-// test rapido para verificar el error cuando el gist no contiene el archivo
+// quick test to verify the error when the gist does not contain the file
 func TestDownloadState_FileNotFound(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -117,11 +117,11 @@ func TestDownloadState_FileNotFound(t *testing.T) {
 
 	err := client.DownloadState(context.Background(), filePath)
 	if err == nil {
-		t.Fatal("se esperaba un error cuando el gist no contiene el archivo")
+		t.Fatal("expected an error when the gist does not contain the file")
 	}
 }
 
-// test rapido para verificar el fracaso de la descarga con error 500
+// quick test to verify the failure of the download with error 500
 func TestDownloadState_HTTPError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -136,6 +136,6 @@ func TestDownloadState_HTTPError(t *testing.T) {
 
 	err := client.DownloadState(context.Background(), filePath)
 	if err == nil {
-		t.Fatal("se esperaba un error con status 500")
+		t.Fatal("expected an error with status 500")
 	}
 }

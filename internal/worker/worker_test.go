@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func TestRunEjecutaTareaPeriodicamente(t *testing.T) {
+func TestRunRunsTaskPeriodically(t *testing.T) {
 	var runs atomic.Int32
 
 	w, err := New(10*time.Millisecond, 0, func(ctx context.Context) error {
@@ -32,11 +32,11 @@ func TestRunEjecutaTareaPeriodicamente(t *testing.T) {
 	}
 
 	if runs.Load() < 3 {
-		t.Fatalf("se esperaban al menos 3 ejecuciones, se obtuvieron %d", runs.Load())
+		t.Fatalf("expected at least 3 executions, got %d", runs.Load())
 	}
 }
 
-func TestRunRetornaNilConContextoCancelado(t *testing.T) {
+func TestRunReturnsNilWithCancelledContext(t *testing.T) {
 	w, err := New(10*time.Millisecond, 0, func(ctx context.Context) error {
 		return nil
 	})
@@ -48,16 +48,16 @@ func TestRunRetornaNilConContextoCancelado(t *testing.T) {
 	cancel()
 
 	if err := w.Run(ctx); err != nil {
-		t.Fatalf("Run debería retornar nil al cancelar el contexto, obtuvo: %v", err)
+		t.Fatalf("Run should return nil when the context is cancelled, got: %v", err)
 	}
 }
 
-func TestRunBackoffTrasFallo(t *testing.T) {
+func TestRunBackoffAfterFailure(t *testing.T) {
 	var runs atomic.Int32
 
 	w, err := New(10*time.Millisecond, 30*time.Millisecond, func(ctx context.Context) error {
 		runs.Add(1)
-		return errors.New("fallo")
+		return errors.New("failure")
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -76,16 +76,16 @@ func TestRunBackoffTrasFallo(t *testing.T) {
 	}
 
 	if runs.Load() != 2 {
-		t.Fatalf("con backoff de 30ms y ventana de 60ms se esperaban 2 ejecuciones, se obtuvieron %d", runs.Load())
+		t.Fatalf("with a 30ms backoff and a 60ms window, 2 executions were expected, got %d", runs.Load())
 	}
 }
 
-func TestNewRechazaParametrosInvalidos(t *testing.T) {
+func TestNewRejectsInvalidParameters(t *testing.T) {
 	if _, err := New(0, 0, func(ctx context.Context) error { return nil }); err == nil {
-		t.Fatal("se esperaba error con interval inválido")
+		t.Fatal("expected error with invalid interval")
 	}
 
 	if _, err := New(time.Second, 0, nil); err == nil {
-		t.Fatal("se esperaba error con task nil")
+		t.Fatal("expected error with nil task")
 	}
 }

@@ -16,7 +16,7 @@ func GetEnabledVar(name string) (bool, error) {
 	enabled, err := strconv.ParseBool(value)
 	if err != nil {
 		return false, fmt.Errorf(
-			"la variable %s debe ser un booleano (true/false), se recibió %q",
+			"the %s variable must be a boolean (true/false), received %q",
 			name,
 			value,
 		)

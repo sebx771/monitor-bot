@@ -24,7 +24,7 @@ func (c *Checker) IsOnline() (bool, error) {
 
 	_, err := pinger.Ping(c.host, c.port)
 	if err != nil {
-		return false, fmt.Errorf("error ejecutando ping al servidor: %w", err)
+		return false, fmt.Errorf("error pinging the server: %w", err)
 	}
 
 	return true, nil

@@ -17,7 +17,7 @@ func newTestClient(token, baseURL string) *Client {
 	}
 }
 
-func TestCheckIniciaServiciosApagados(t *testing.T) {
+func TestCheckStartsPoweredOffServices(t *testing.T) {
 	var puts atomic.Int32
 	var authHeader string
 
@@ -41,19 +41,19 @@ func TestCheckIniciaServiciosApagados(t *testing.T) {
 	checker := NewChecker(newTestClient("test-token", server.URL), "proj-1")
 
 	if err := checker.Check(); err != nil {
-		t.Fatalf("Check devolvió error inesperado: %v", err)
+		t.Fatalf("Check returned unexpected error: %v", err)
 	}
 
 	if puts.Load() != 1 {
-		t.Fatalf("se esperaba 1 PUT, se obtuvieron %d", puts.Load())
+		t.Fatalf("expected 1 PUT, got %d", puts.Load())
 	}
 
 	if authHeader != "aivenv1 test-token" {
-		t.Fatalf("header de auth incorrecto: %q", authHeader)
+		t.Fatalf("incorrect auth header: %q", authHeader)
 	}
 }
 
-func TestCheckNoAbortaAnteFalloDeServicio(t *testing.T) {
+func TestCheckDoesNotAbortOnServiceFailure(t *testing.T) {
 	var puts atomic.Int32
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -75,15 +75,15 @@ func TestCheckNoAbortaAnteFalloDeServicio(t *testing.T) {
 	checker := NewChecker(newTestClient("test-token", server.URL), "proj-1")
 
 	if err := checker.Check(); err != nil {
-		t.Fatalf("Check devolvió error inesperado: %v", err)
+		t.Fatalf("Check returned unexpected error: %v", err)
 	}
 
 	if puts.Load() != 2 {
-		t.Fatalf("se esperaban 2 PUT a pesar del fallo, se obtuvieron %d", puts.Load())
+		t.Fatalf("expected 2 PUTs despite the failure, got %d", puts.Load())
 	}
 }
 
-func TestCheckErrorDeAPI(t *testing.T) {
+func TestCheckAPIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 	}))
@@ -93,10 +93,10 @@ func TestCheckErrorDeAPI(t *testing.T) {
 
 	err := checker.Check()
 	if err == nil {
-		t.Fatal("se esperaba error al fallar la API")
+		t.Fatal("expected error when the API fails")
 	}
 
 	if !strings.Contains(err.Error(), "proj-1") {
-		t.Fatalf("el error debería mencionar el proyecto, se obtuvo: %v", err)
+		t.Fatalf("the error should mention the project, got: %v", err)
 	}
 }

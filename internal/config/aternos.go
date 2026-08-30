@@ -50,32 +50,32 @@ func (At *AternosConfig) GetValues() error {
 
 	host := os.Getenv("HOST")
 	if host == "" {
-		return errors.New("La Variable HOST es obligatoria")
+		return errors.New("the HOST variable is required")
 	}
 
 	server := os.Getenv("SERVER_ID")
 	if server == "" {
-		return errors.New("La Variable SERVER_ID es obligatoria")
+		return errors.New("the SERVER_ID variable is required")
 	}
 
 	path := os.Getenv("STORAGE_PATH")
 	if path == "" {
-		return errors.New("La Variable STORAGE_PATH es obligatoria")
+		return errors.New("the STORAGE_PATH variable is required")
 	}
 
 	headless := os.Getenv("HEADLESS")
 	if headless == "" {
-		return errors.New("La Variable HEADLESS es obligatoria")
+		return errors.New("the HEADLESS variable is required")
 	}
 
 	githubToken := os.Getenv("GITHUB_TOKEN")
 	if githubToken == "" {
-		return errors.New("La Variable GITHUB_TOKEN es obligatoria")
+		return errors.New("the GITHUB_TOKEN variable is required")
 	}
 
 	gistId := os.Getenv("GIST_ID")
 	if gistId == "" {
-		return errors.New("La Variable GIST_ID es obligatoria")
+		return errors.New("the GIST_ID variable is required")
 	}
 
 	At.host = host

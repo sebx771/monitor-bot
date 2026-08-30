@@ -76,15 +76,15 @@ func (a *AternosBot) OpenServers() error {
 	url := a.page.URL()
 	title, err := a.page.Title()
 
-	log.Debug("URL actual", "url", url)
+	log.Debug("current URL", "url", url)
 	if err != nil {
-		log.Error("error obteniendo título", "error", err)
+		log.Error("error getting title", "error", err)
 	} else {
-		log.Debug("título obtenido", "titulo", title)
+		log.Debug("title obtained", "title", title)
 	}
 
     if title == "Just a moment..." {
-    return fmt.Errorf("Cloudflare mostró una página de verificación; no se cargó el panel de Aternos")
+    return fmt.Errorf("Cloudflare showed a verification page; the Aternos panel did not load")
 }
 
 	return a.page.
@@ -95,18 +95,18 @@ func (a *AternosBot) OpenServers() error {
 func (a *AternosBot) SelectServer(serverID string) error {
 	selector := fmt.Sprintf(`div.server-body[data-id="%s"]`, serverID)
 
-	log.Info("haciendo clic en el servidor de la lista", "server_id", serverID)
+	log.Info("clicking the server in the list", "server_id", serverID)
 	if err := a.page.Locator(selector).Click(); err != nil {
 		return err
 	}
 
-	// ESPERA CLAVE: Esperamos a que la URL cambie a la página del panel (/server/)
-	log.Info("esperando a que cargue la página del panel")
+	// KEY WAIT: We wait for the URL to change to the panel page (/server/)
+	log.Info("waiting for the panel page to load")
 	err := a.page.WaitForURL("**/server/**", playwright.PageWaitForURLOptions{
-		Timeout: playwright.Float(15000), // 15 segundos máximo
+		Timeout: playwright.Float(15000), // 15 seconds max
 	})
 	if err != nil {
-		log.Warn("la URL no cambió a tiempo, continuando")
+		log.Warn("the URL did not change in time, continuing")
 	}
 
 	return nil
@@ -115,25 +115,25 @@ func (b *AternosBot) ClickStart() error {
 
 	start := b.page.Locator("#start")
 
-	log.Info("esperando a que el botón Start sea visible")
+	log.Info("waiting for the Start button to be visible")
 
 	if err := start.WaitFor(playwright.LocatorWaitForOptions{
 		State:   playwright.WaitForSelectorStateVisible,
 		Timeout: playwright.Float(15000),
 	}); err != nil {
-		return fmt.Errorf("el botón #start nunca apareció en la pantalla: %w", err)
+		return fmt.Errorf("the #start button never appeared on screen: %w", err)
 	}
 
-	log.Info("botón Start localizado, enviando clic")
+	log.Info("Start button located, sending click")
 
-	// Usamos Force: true por si hay un banner transparente de publicidad sobre el botón
+	// We use Force: true in case there is a transparent ad banner over the button
 	if err := start.Click(playwright.LocatorClickOptions{
 		Force: playwright.Bool(true),
 	}); err != nil {
-		return fmt.Errorf("error al hacer clic en start: %w", err)
+		return fmt.Errorf("error clicking start: %w", err)
 	}
 
-	log.Info("clic enviado exitosamente, revisando si aparece modal de confirmación")
+	log.Info("click sent successfully, checking if a confirmation modal appears")
 
 	b.HandleDialogs()
 
@@ -144,19 +144,19 @@ func (a *AternosBot) HandleDialogs() error {
 	for _, selector := range dialogSelectors() {
 		locator := a.page.Locator(selector)
 
-		// SOLUCIÓN: Agregamos un Timeout de 3 segundos.
-		// Si el modal no aparece rápido, saltamos al siguiente en lugar de esperar 30s.
+		// SOLUTION: We add a 3 second timeout.
+		// If the modal does not appear quickly, we skip to the next one instead of waiting 30s.
 		if err := locator.WaitFor(
 			playwright.LocatorWaitForOptions{
 				State:   playwright.WaitForSelectorStateVisible,
-				Timeout: playwright.Float(3000), // 3000 milisegundos = 3 segundos
+				Timeout: playwright.Float(3000), // 3000 milliseconds = 3 seconds
 			},
 		); err != nil {
 			continue
 		}
 
 		if err := locator.Click(); err != nil {
-			log.Error("no se pudo clickear el modal", "modal", selector, "error", err)
+			log.Error("could not click the modal", "modal", selector, "error", err)
 		}
 
 		time.Sleep(500 * time.Millisecond)

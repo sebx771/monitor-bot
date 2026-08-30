@@ -59,7 +59,7 @@ func TestCheck_Checker_ActiveProjects(t *testing.T) {
 	checker.Check()
 
 	if pots.Load() != 0 {
-		t.Fatalf("se esperaba 0 POST, se obtuvieron %d", pots.Load())
+		t.Fatalf("expected 0 POST, got %d", pots.Load())
 	}
 
 }
@@ -84,7 +84,7 @@ func TestCheck_Checker_InactiveProjects(t *testing.T) {
 	checker.Check()
 
 	if pots.Load() != 1 {
-		t.Fatalf("se esperaba 1 PUT, se obtuvieron %d", pots.Load())
+		t.Fatalf("expected 1 PUT, got %d", pots.Load())
 	}
 
 }
@@ -119,11 +119,11 @@ func TestCheck_Checker_RestoreProjectError(t *testing.T) {
 	err := checker.Check()
 
 	if err != nil {
-		t.Fatalf("se esperaba nil, se obtuvo %v", err)
+		t.Fatalf("expected nil, got %v", err)
 	}
 
 	if posts.Load() != 1 {
-		t.Fatalf("se esperaba 1 POST, se obtuvieron %d", posts.Load())
+		t.Fatalf("expected 1 POST, got %d", posts.Load())
 	}
 }
 

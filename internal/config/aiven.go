@@ -49,7 +49,7 @@ func (a *AivenConfig) LoadAivenCredentials() error {
 	
 		if token == "" || project == "" {
 			return fmt.Errorf(
-				"las variables AIVEN_TOKEN_%d y AIVEN_PROJECT_%d deben estar ambas definidas",
+				"the AIVEN_TOKEN_%d and AIVEN_PROJECT_%d variables must both be defined",
 				i,
 				i,
 			)
@@ -75,7 +75,7 @@ func (a *AivenConfig) LoadAivenCredentials() error {
 
 	if len(credentials) == 0 {
 		return errors.New(
-			"se requiere al menos una credencial AIVEN",
+			"at least one AIVEN credential is required",
 		)
 	}
 
