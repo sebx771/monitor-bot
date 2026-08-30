@@ -9,7 +9,7 @@ import (
 
 
 type Config struct {
-	globalConfig  struct{} // de momento lo dejo asi , hasta que haga los struct reales de las config
+	globalConfig  struct{} // leaving it like this for now, until I build the real structs
 	aivenConfig   AivenConfig
 	aternosConfig  AternosConfig
 	supaBaseConfig SupabaseConfig
@@ -19,14 +19,13 @@ func NewConfig() (*Config, error){
 	logs:= logger.NewLogger("CONFIG")
 	config := &Config{}
 
-	logs.Debug("Iniciando configuracion del sistema")
-
+	logs.Debug("Starting system configuration")
 	if err := loadEnv(".env"); err != nil && !os.IsNotExist(err) {
 		return nil, err
 	}
 
-	// en este bloque ira la declaracion de las demas config para posteriormente instancear
-	//  la config raiz 
+	// the other configs will be declared in this block to later instantiate
+	// the root config
 	aiven,err:= NewAivenConfig()
 	if err!= nil {
 		return nil , err
@@ -57,6 +56,9 @@ func (c *Config) GetAivenConfig() *AivenConfig {
 
 func (c *Config) GetAternosConfig() *AternosConfig {
 	return &c.aternosConfig
+}
+func (c *Config) GetSupaBaseConfig() *SupabaseConfig{
+	return &c.supaBaseConfig
 }
 
 
