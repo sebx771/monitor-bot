@@ -12,6 +12,7 @@ type Config struct {
 	globalConfig  struct{} // de momento lo dejo asi , hasta que haga los struct reales de las config
 	aivenConfig   AivenConfig
 	aternosConfig  AternosConfig
+	supaBaseConfig SupabaseConfig
 }
 
 func NewConfig() (*Config, error){
@@ -35,10 +36,15 @@ func NewConfig() (*Config, error){
 	if err != nil {
 		return nil , err
 	}
+	supabase , err := NewSupabaseConfig()
+	if err != nil {
+		return  nil , err 
+	}
 
 	
     config.aivenConfig= *aiven
 	config.aternosConfig= *aternos
+	config.supaBaseConfig= *supabase
 	
 
     return  config, nil
