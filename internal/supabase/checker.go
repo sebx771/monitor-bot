@@ -26,9 +26,13 @@ func (c *Checker) Check() error {
 
 	for _, project := range projects {
 		if project.Status != "INACTIVE" {
+			c.logger.Info(
+				"Supabase project active",
+				"project", project.Name,
+				"ref", project.Ref,
+				"status", project.Status,
+			)
 			continue
-		}else{
-			c.logger.Info("services checked", "project",project.Name , "status", project.Status,)
 		}
 
 		c.logger.Info(
