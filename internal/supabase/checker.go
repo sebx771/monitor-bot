@@ -2,6 +2,7 @@ package supabase
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/sebx771/monitor-bot/internal/logger"
 )
@@ -18,6 +19,12 @@ func NewChecker(client *Client, logger *logger.Logger) *Checker {
 	}
 }
 
+// isInactive checks if the project status indicates it is suspended (INACTIVE or PAUSED).
+func isInactive(status string) bool {
+	s := strings.ToUpper(strings.TrimSpace(status))
+	return s == "INACTIVE" || s == "PAUSED"
+}
+
 func (c *Checker) Check() error {
 	projects, err := c.client.ListProjects()
 	if err != nil {
@@ -25,7 +32,7 @@ func (c *Checker) Check() error {
 	}
 
 	for _, project := range projects {
-		if project.Status != "INACTIVE" {
+		if !isInactive(project.Status) {
 			c.logger.Info(
 				"Supabase project active",
 				"project", project.Name,
@@ -36,9 +43,10 @@ func (c *Checker) Check() error {
 		}
 
 		c.logger.Info(
-			"Supabase project inactive, attempting to restore",
+			"Supabase project inactive or paused, attempting to restore",
 			"project", project.Name,
 			"ref", project.Ref,
+			"status", project.Status,
 		) 
 
 		if err := c.client.RestoreProject(project.Ref); err != nil {

@@ -84,9 +84,33 @@ func TestCheck_Checker_InactiveProjects(t *testing.T) {
 	checker.Check()
 
 	if pots.Load() != 1 {
-		t.Fatalf("expected 1 PUT, got %d", pots.Load())
+		t.Fatalf("expected 1 POST, got %d", pots.Load())
 	}
 
+}
+
+func TestCheck_Checker_PausedProjects(t *testing.T) {
+	var posts atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			json.NewEncoder(w).Encode([]Project{
+				{ID: "3", Ref: "5678", Name: "postgres", Status: "PAUSED"},
+			})
+			return
+		}
+
+		if r.Method == http.MethodPost {
+			posts.Add(1)
+			w.WriteHeader(http.StatusAccepted)
+		}
+	}))
+	defer server.Close()
+	checker := InitChecker(server.URL)
+	checker.Check()
+
+	if posts.Load() != 1 {
+		t.Fatalf("expected 1 POST for PAUSED project, got %d", posts.Load())
+	}
 }
 
 func TestCheck_Checker_RestoreProjectError(t *testing.T) {
