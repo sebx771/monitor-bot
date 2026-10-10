@@ -30,7 +30,7 @@ Practice bot that automates administration tasks through programmable workers (p
 | **Logger** | 🟢 Active | Centralized structured logging system |
 
 > [!WARNING]
-> The **Aternos** module was removed from `main` due to **Cloudflare** blocks in headless mode. Its code remains in the repository (`internal/automation`, `internal/adapters`, `internal/minecraft`, `internal/services`) pending review: it will be replaced with another strategy or deleted in the future.
+> The **Aternos** module is disabled due to **Cloudflare** blocks in headless mode. Its code is retained under `internal/integrations/aternos` pending review: it will be replaced with another strategy or deleted in the future.
 
 ---
 
@@ -61,9 +61,9 @@ flowchart TD
 | Feature | Module | Description |
 |---|---|---|
 | Programmable worker | `internal/worker` | Periodic execution with interval, cooldown on failures and protection against overlapping cycles |
-| Aiven checker | `internal/aiven` | Checks service status per project and automatically starts those that are `POWEROFF` |
-| Supabase checker | `internal/supabase` | Lists Supabase projects and restores those that are `INACTIVE` |
-| Multi-project | `internal/aiven` | Supports multiple Aiven projects in parallel; an API failure does not abort the others (`errors.Join`) |
+| Aiven checker | `internal/integrations/aiven` | Checks service status per project and automatically starts those that are `POWEROFF` |
+| Supabase checker | `internal/integrations/supabase` | Lists Supabase projects and restores those that are `INACTIVE` |
+| Multi-project | `internal/integrations/aiven` | Supports multiple Aiven projects in parallel; an API failure does not abort the others (`errors.Join`) |
 | Centralized logger | `internal/logger` | Structured logs with attributes and per-module context |
 | Signal handling | `cmd/main.go` | Clean shutdown with `SIGINT`/`SIGTERM` (Ctrl+C) |
 | Dynamic worker activation | `internal/config` | Enables each worker via environment variables (`*_ENABLED`) |
@@ -72,9 +72,9 @@ flowchart TD
 
 | Feature | Module | Pause reason |
 |---|---|---|
-| Minecraft server ping | `internal/minecraft` | Cloudflare blocks in headless mode |
-| Playwright + Chromium automation | `internal/adapters` / `internal/automation` | Removed from the main flow, pending redesign or removal |
-| GitHub Gist session sync | `internal/adapters/github_gist` | Depended on the Aternos browser flow |
+| Minecraft server ping | `internal/integrations/aternos/minecraft` | Cloudflare blocks in headless mode |
+| Playwright + Chromium automation | `internal/integrations/aternos/adapters` / `internal/integrations/aternos/automation` | Removed from the main flow, pending redesign or removal |
+| GitHub Gist session sync | `internal/integrations/aternos/adapters` | Depended on the Aternos browser flow |
 
 ---
 
@@ -100,20 +100,22 @@ Project organized under **clean architecture** principles (ports and adapters):
 cmd/
 └── main.go               CLI application: orchestrates the workers
 internal/
-├── config/               Per-module configurations (pending refactor)
+├── config/               Per-module configurations
+├── integrations/
+│   ├── aiven/            Client and checker for the Aiven API
+│   ├── supabase/         Client and checker for the Supabase API
+│   └── aternos/          Paused integration
+│       ├── adapters/     Playwright and GitHub Gist implementations
+│       ├── automation/   Aternos server startup automation
+│       ├── minecraft/    Server status check by ping
+│       ├── ports/        BrowserManager and StateStorage interfaces
+│       └── services/    Aternos bot pipeline
 ├── logger/               Centralized logging system
-├── ports/                Interfaces: BrowserManager, StateStorage
-├── adapters/             Implementations: Playwright, GitHub Gist
-├── automation/           Server startup automation
-├── minecraft/            Status check by ping
-├── services/             Services layer (bot pipeline)
-├── worker/               Periodic task execution (interval + cooldown)
-├── aiven/                Client and checker for the Aiven API
-└── supabase/             Client and checker for the Supabase API
+└── worker/               Periodic task execution (interval + cooldown)
 storage/                  Browser session persistence (state.json)
 ```
 
-> Modules marked as *paused* in [Current status](#-current-status) are not executed from `main`, but their code is kept to reuse the architecture in future integrations.
+> Modules marked as *paused* in [Current status](#-current-status) are not executed from `main`. Provider-specific code stays inside its integration; shared configuration, logging, and worker infrastructure remain outside `internal/integrations`.
 
 ---
 

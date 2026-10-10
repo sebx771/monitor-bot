@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sebx771/monitor-bot/internal/adapters"
-	"github.com/sebx771/monitor-bot/internal/automation"
+	"github.com/sebx771/monitor-bot/internal/integrations/aternos/adapters"
+	"github.com/sebx771/monitor-bot/internal/integrations/aternos/automation"
+	"github.com/sebx771/monitor-bot/internal/integrations/aternos/minecraft"
+	port "github.com/sebx771/monitor-bot/internal/integrations/aternos/ports"
 	"github.com/sebx771/monitor-bot/internal/logger"
-	"github.com/sebx771/monitor-bot/internal/minecraft"
-	port "github.com/sebx771/monitor-bot/internal/ports"
 )
 
 var log = logger.NewLogger("SERVICE")

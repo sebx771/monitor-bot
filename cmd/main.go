@@ -14,10 +14,10 @@ import (
 	"github.com/sebx771/monitor-bot/internal/integrations/aiven"
 	"github.com/sebx771/monitor-bot/internal/logger"
 
-	"github.com/sebx771/monitor-bot/internal/adapters"
+	"github.com/sebx771/monitor-bot/internal/integrations/aternos/adapters"
 	"github.com/sebx771/monitor-bot/internal/integrations/supabase"
-	"github.com/sebx771/monitor-bot/internal/minecraft"
-	service "github.com/sebx771/monitor-bot/internal/services"
+	"github.com/sebx771/monitor-bot/internal/integrations/aternos/minecraft"
+	service "github.com/sebx771/monitor-bot/internal/integrations/aternos/services"
 
 
 

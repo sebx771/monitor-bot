@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/mxschmitt/playwright-go"
+	port "github.com/sebx771/monitor-bot/internal/integrations/aternos/ports"
 	"github.com/sebx771/monitor-bot/internal/logger"
-	port "github.com/sebx771/monitor-bot/internal/ports"
 )
 
 var log = logger.NewLogger("ATERNOS")
@@ -85,7 +85,7 @@ func (a *AternosBot) OpenServers() error {
 
     if title == "Just a moment..." {
     return fmt.Errorf("Cloudflare showed a verification page; the Aternos panel did not load")
-}
+	}
 
 	return a.page.
 		Locator(`nav .mod-signup`).
