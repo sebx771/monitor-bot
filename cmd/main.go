@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sebx771/monitor-bot/internal/aiven"
 	config "github.com/sebx771/monitor-bot/internal/config"
+	"github.com/sebx771/monitor-bot/internal/integrations/aiven"
 	"github.com/sebx771/monitor-bot/internal/logger"
 
 	"github.com/sebx771/monitor-bot/internal/adapters"
