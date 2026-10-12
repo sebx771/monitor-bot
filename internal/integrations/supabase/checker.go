@@ -25,10 +25,10 @@ func isInactive(status string) bool {
 	return s == "INACTIVE" || s == "PAUSED"
 }
 
-func (c *Checker) Check() error {
+func (c *Checker) Check() ([]Project, error) {
 	projects, err := c.client.ListProjects()
 	if err != nil {
-		return fmt.Errorf("error getting Supabase projects: %w", err)
+		return nil, fmt.Errorf("error getting Supabase projects: %w", err)
 	}
 
 	for _, project := range projects {
@@ -47,7 +47,7 @@ func (c *Checker) Check() error {
 			"project", project.Name,
 			"ref", project.Ref,
 			"status", project.Status,
-		) 
+		)
 
 		if err := c.client.RestoreProject(project.Ref); err != nil {
 			c.logger.Error(
@@ -67,5 +67,5 @@ func (c *Checker) Check() error {
 		)
 	}
 
-	return nil
+	return projects, nil
 }

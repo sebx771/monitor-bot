@@ -31,7 +31,7 @@ func TestCheck_Checker_ListProjectError(t *testing.T) {
 	}))
 	defer server.Close()
 	checker := InitChecker(server.URL)
-	err := checker.Check()
+	_, err := checker.Check()
 
 	if err == nil {
 		t.Fatalf("want error , got nil")
@@ -56,7 +56,7 @@ func TestCheck_Checker_ActiveProjects(t *testing.T) {
 	}))
 	defer server.Close()
 	checker := InitChecker(server.URL)
-	checker.Check()
+	_, _ = checker.Check()
 
 	if pots.Load() != 0 {
 		t.Fatalf("expected 0 POST, got %d", pots.Load())
@@ -81,7 +81,7 @@ func TestCheck_Checker_InactiveProjects(t *testing.T) {
 	}))
 	defer server.Close()
 	checker := InitChecker(server.URL)
-	checker.Check()
+	_, _ = checker.Check()
 
 	if pots.Load() != 1 {
 		t.Fatalf("expected 1 POST, got %d", pots.Load())
@@ -106,7 +106,7 @@ func TestCheck_Checker_PausedProjects(t *testing.T) {
 	}))
 	defer server.Close()
 	checker := InitChecker(server.URL)
-	checker.Check()
+	_, _ = checker.Check()
 
 	if posts.Load() != 1 {
 		t.Fatalf("expected 1 POST for PAUSED project, got %d", posts.Load())
@@ -140,7 +140,7 @@ func TestCheck_Checker_RestoreProjectError(t *testing.T) {
 
 	checker := InitChecker(server.URL)
 
-	err := checker.Check()
+	_, err := checker.Check()
 
 	if err != nil {
 		t.Fatalf("expected nil, got %v", err)
