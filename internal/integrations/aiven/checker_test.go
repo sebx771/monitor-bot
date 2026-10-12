@@ -40,7 +40,7 @@ func TestCheckStartsPoweredOffServices(t *testing.T) {
 
 	checker := NewChecker(newTestClient("test-token", server.URL), "proj-1")
 
-	if err := checker.Check(); err != nil {
+	if _, err := checker.Check(); err != nil {
 		t.Fatalf("Check returned unexpected error: %v", err)
 	}
 
@@ -74,7 +74,7 @@ func TestCheckDoesNotAbortOnServiceFailure(t *testing.T) {
 
 	checker := NewChecker(newTestClient("test-token", server.URL), "proj-1")
 
-	if err := checker.Check(); err != nil {
+	if _, err := checker.Check(); err != nil {
 		t.Fatalf("Check returned unexpected error: %v", err)
 	}
 
@@ -91,7 +91,7 @@ func TestCheckAPIError(t *testing.T) {
 
 	checker := NewChecker(newTestClient("bad-token", server.URL), "proj-1")
 
-	err := checker.Check()
+	_, err := checker.Check()
 	if err == nil {
 		t.Fatal("expected error when the API fails")
 	}

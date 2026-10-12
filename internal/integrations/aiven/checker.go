@@ -22,10 +22,10 @@ func NewChecker(client *Client, project string) *AivenChecker {
 
 // Check reviews the project's services and starts the ones that are off.
 // An error in one service does not stop checking the rest.
-func (c *AivenChecker) Check() error {
+func (c *AivenChecker) Check() ([]Service, error) {
 	services, err := c.client.GetServices(c.project)
 	if err != nil {
-		return fmt.Errorf("error getting Aiven services (project %s): %w", c.project, err)
+		return nil, fmt.Errorf("error getting Aiven services (project %s): %w", c.project, err)
 	}
 
 	for _, service := range services {
@@ -48,5 +48,5 @@ func (c *AivenChecker) Check() error {
 		}
 	}
 
-	return nil
+	return services, nil
 }
