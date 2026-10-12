@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] - 2026-10-11
+
+### Added
+
+- **Worker status store** (`internal/status/workers_status.go`): in-memory, concurrency-safe status store (`Store`) protected with `sync.RWMutex`.
+  - `WorkerStatus` and `MonitoredService` models, and the `Operational`, `Degraded`, `Error` and `Paused` states.
+  - `NewWorkerStatus` constructor with state validation, plus `Store.Set` and `Store.GetAll` methods.
+- **HTTP API v1** (`internal/api`): Gin router with CORS support and the `GET /api/v1/status` endpoint, which returns the status of every worker registered in the store.
+- **Per-worker status reporting** (`cmd/main.go`): the Aiven, Supabase and Aternos tasks now map their checker results to `[]status.MonitoredService` and register a `WorkerStatus` in the store on every cycle.
+- **Detailed checker responses**: `AivenChecker.Check` now returns the checked `[]Service` and `Checker.Check` (Supabase) returns the checked `[]Project`, so the state of each resource can be reported.
+- **Aternos status reporting** (`internal/integrations/aternos/services/aternos_services.go`): new `CheckAndStartServerWithStore` method that records the Minecraft server as `ONLINE`/`OFFLINE` or `Error` in the store.
+
+### Changed
+
+- **Partial failure handling in Aiven** (`cmd/main.go`): when one or more projects fail while others succeed, the worker is marked as `Degraded` without triggering the 30-minute cooldown; only a total failure marks it as `Error` and returns an error to trigger the cooldown.
+- **Worker startup** (`cmd/main.go`): extracted the repetitive goroutine startup into a reusable `startWorker` helper and started the HTTP server that exposes the status API.
+
 ## [1.4.0] - 2026-08-30
 
 ### Added
