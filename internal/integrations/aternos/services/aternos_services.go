@@ -10,6 +10,7 @@ import (
 	"github.com/sebx771/monitor-bot/internal/integrations/aternos/minecraft"
 	port "github.com/sebx771/monitor-bot/internal/integrations/aternos/ports"
 	"github.com/sebx771/monitor-bot/internal/logger"
+	"github.com/sebx771/monitor-bot/internal/status"
 )
 
 var log = logger.NewLogger("SERVICE")
@@ -20,16 +21,21 @@ type BotService struct {
 	storagePath string
 	serverID    string
 	headless    bool
+	host        string
 }
 
-func NewBotService(checker *minecraft.Checker, storage port.StateStorage, storagePath, serverID string, headless bool) *BotService {
-	return &BotService{
+func NewBotService(checker *minecraft.Checker, storage port.StateStorage, storagePath, serverID string, headless bool, host ...string) *BotService {
+	bs := &BotService{
 		checker:     checker,
 		storage:     storage,
 		storagePath: storagePath,
 		serverID:    serverID,
 		headless:    headless,
 	}
+	if len(host) > 0 {
+		bs.host = host[0]
+	}
+	return bs
 }
 
 // CheckAndStartServer is the function that satisfies the Worker's `Task` type
@@ -61,6 +67,67 @@ func (s *BotService) CheckAndStartServer(ctx context.Context) error {
 	}
 
 	log.Info("the server is now online and ready to play")
+	return nil
+}
+
+// CheckAndStartServerWithStore satisfies the Worker's Task type and registers status
+func (s *BotService) CheckAndStartServerWithStore(ctx context.Context, store *status.Store) error {
+	log.Info("checking Minecraft server status")
+
+	online, err := s.checker.IsOnline()
+	if err != nil {
+		log.Warn("server does not respond to ping", "error", err)
+		online = false
+	}
+
+	services := []status.MonitoredService{
+		{
+			Target: s.host,
+			State:  func() string {
+				if online {
+					return "ONLINE"
+				}
+				return "OFFLINE"
+			}(),
+		},
+	}
+
+	if online {
+		ws, _ := status.NewWorkerStatus("aternos", "Aternos/Minecraft", status.Operational, services, "")
+		if store != nil {
+			store.Set(ws)
+		}
+		log.Info("server is already online, skipping startup")
+		return nil
+	}
+
+	log.Info("server offline, starting Aternos automation")
+
+	// We only launch the browser if the server is REALLY offline
+	if err := s.startAternosServer(ctx); err != nil {
+		ws, _ := status.NewWorkerStatus("aternos", "Aternos/Minecraft", status.Error, services, err.Error())
+		if store != nil {
+			store.Set(ws)
+		}
+		return fmt.Errorf("server startup failed: %w", err)
+	}
+
+	log.Info("start click sent, waiting for the server to come online")
+
+	if err := s.waitForOnline(); err != nil {
+		ws, _ := status.NewWorkerStatus("aternos", "Aternos/Minecraft", status.Error, services, err.Error())
+		if store != nil {
+			store.Set(ws)
+		}
+		return fmt.Errorf("the server did not confirm it is online: %w", err)
+	}
+
+	log.Info("the server is now online and ready to play")
+	services[0].State = "ONLINE"
+	ws, _ := status.NewWorkerStatus("aternos", "Aternos/Minecraft", status.Operational, services, "")
+	if store != nil {
+		store.Set(ws)
+	}
 	return nil
 }
 
