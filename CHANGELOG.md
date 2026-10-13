@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.5.1] - 2026-10-12
+
+### Fixed
+
+- **Goroutine leak in HTTP server shutdown** (`cmd/main.go`): the shutdown goroutine called `wg.Add(1)` but never `wg.Done()`, causing `wg.Wait()` to block indefinitely once all workers had finished. Added `defer wg.Done()` as the first statement inside the goroutine.
+
 ## [1.5.0] - 2026-10-11
 
 ### Added
