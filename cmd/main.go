@@ -64,18 +64,19 @@ func main() {
 	var wg sync.WaitGroup
 
 
-	 // goroutine for the server stop (if context is done , stop the server)
-	 wg.Add(1)
-    go func() {
-        <-ctx.Done() 
+	// goroutine for the server stop (if context is done, stop the server)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<-ctx.Done()
 
-        shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-        defer cancel()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 
-        if err := srv.Shutdown(shutdownCtx); err != nil {
-            log.Error("error shutting down server gracefully", "error", err)
-        }
-    }()
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			log.Error("error shutting down server gracefully", "error", err)
+		}
+	}()
 
 	// Aternos (Minecraft) bot — only if enabled
 	if aternosEnabled {
