@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] - 2026-10-16
+
+### Added
+
+- **Manual worker trigger endpoint** (`internal/api`): added `POST /api/v1/workers/:id/trigger` returning `202 Accepted` on trigger dispatch, `404 Not Found` if worker does not exist or is inactive, and `409 Conflict` if the worker is busy or a trigger is already queued.
+- **Worker trigger channel** (`internal/worker/worker.go`): added non-blocking `triggerCh` and `Trigger()` method on `Worker` to trigger task cycles on-demand outside the ticker interval.
+- **Worker registry in status store** (`internal/status/workers_status.go`): integrated active worker reference tracking into `Store` via `RegisterWorker` and `GetWorker` using existing synchronization.
+- **Automatic worker registration** (`cmd/main.go`): `startWorker` now automatically registers only enabled workers into `Store` on startup.
+- **Unit test for manual trigger** (`internal/worker/worker_test.go`): added `TestRunManualTrigger` validating on-demand cycle execution.
+
 ## [1.5.1] - 2026-10-12
 
 ### Fixed

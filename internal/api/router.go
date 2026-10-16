@@ -26,11 +26,12 @@ func SetupRouter(store *status.Store) *gin.Engine {
 
 	v1 := r.Group("/api/v1")
 	{
-		v1.GET("/",func(ctx *gin.Context) {
-		    ctx.JSON(http.StatusOK,gin.H{"status":"ok"})
+		v1.GET("/", func(ctx *gin.Context) {
+			ctx.JSON(http.StatusOK, gin.H{"status": "ok"})
 		})
 
 		v1.GET("/status", handler.GetStatus)
+		v1.POST("/workers/:id/trigger", handler.TriggerWorker)
 	}
 
 	return r

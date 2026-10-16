@@ -89,3 +89,43 @@ func TestNewRejectsInvalidParameters(t *testing.T) {
 		t.Fatal("expected error with nil task")
 	}
 }
+
+func TestRunManualTrigger(t *testing.T) {
+	var runs atomic.Int32
+
+	// Set a very long interval so it only runs on startup and manual triggers
+	w, err := New(1*time.Hour, 0, func(ctx context.Context) error {
+		runs.Add(1)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	done := make(chan error, 1)
+	go func() { done <- w.Run(ctx) }()
+
+	// Wait for the startup execution
+	time.Sleep(20 * time.Millisecond)
+	if runs.Load() != 1 {
+		t.Fatalf("expected 1 execution on startup, got %d", runs.Load())
+	}
+
+	// Trigger manual run
+	if !w.Trigger() {
+		t.Fatal("expected trigger to succeed")
+	}
+
+	// Allow execution to complete
+	time.Sleep(30 * time.Millisecond)
+	if runs.Load() != 2 {
+		t.Fatalf("expected 2 executions after trigger, got %d", runs.Load())
+	}
+
+	cancel()
+	<-done
+}
+

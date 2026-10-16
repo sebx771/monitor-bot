@@ -89,7 +89,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		startWorker(ctx, &wg, log, "Minecraft", w)
+		startWorker(ctx, &wg, log, "Minecraft", "aternos", w, store)
 	}
 
 	// Aiven monitor — only if enabled
@@ -102,7 +102,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		startWorker(ctx, &wg, log, "Aiven", wAiven)
+		startWorker(ctx, &wg, log, "Aiven", "aiven", wAiven, store)
 	}
 
 	if supabaseEnabled {
@@ -114,7 +114,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		startWorker(ctx, &wg, log, "Supabase", wSupaBase)
+		startWorker(ctx, &wg, log, "Supabase", "supabase", wSupaBase, store)
 	}
 
 	wg.Wait()
@@ -122,7 +122,8 @@ func main() {
 	log.Info("application finished successfully")
 }
 
-func startWorker(ctx context.Context, wg *sync.WaitGroup, log *logger.Logger, name string, w *worker.Worker) {
+func startWorker(ctx context.Context, wg *sync.WaitGroup, log *logger.Logger, name, id string, w *worker.Worker, store *status.Store) {
+	store.RegisterWorker(id, w)
 	wg.Add(1)
 	go func() {
 		defer wg.Done()

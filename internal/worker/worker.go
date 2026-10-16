@@ -14,9 +14,10 @@ var log = logger.NewLogger("WORKER")
 type Task func(ctx context.Context) error
 
 type Worker struct {
-	interval time.Duration
-	cooldown time.Duration
-	task     Task
+	interval  time.Duration
+	cooldown  time.Duration
+	task      Task
+	triggerCh chan struct{}
 
 	mu sync.Mutex
 }
@@ -31,10 +32,22 @@ func New(interval, cooldown time.Duration, task Task) (*Worker, error) {
 	}
 
 	return &Worker{
-		interval: interval,
-		cooldown: cooldown,
-		task:     task,
+		interval:  interval,
+		cooldown:  cooldown,
+		task:      task,
+		triggerCh: make(chan struct{}, 1),
 	}, nil
+}
+
+// Trigger requests an immediate execution of the task outside the normal schedule.
+// Returns false if the worker is currently busy or a trigger is already pending.
+func (w *Worker) Trigger() bool {
+	select {
+	case w.triggerCh <- struct{}{}:
+		return true
+	default:
+		return false
+	}
 }
 
 func (w *Worker) Run(ctx context.Context) error {
@@ -48,6 +61,10 @@ func (w *Worker) Run(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return nil
+
+		case <-w.triggerCh:
+			log.Info("manual trigger received")
+			w.execute(ctx)
 
 		case <-ticker.C:
 			failed := w.execute(ctx)

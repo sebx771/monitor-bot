@@ -4,6 +4,8 @@ import (
 	"errors"
 	"sync"
 	"time"
+
+	"github.com/sebx771/monitor-bot/internal/worker"
 )
 
 type Status string
@@ -50,14 +52,29 @@ func NewWorkerStatus(id, name string, s Status, services []MonitoredService, mes
 
 // status storage
 type Store struct {
-	mu      sync.RWMutex
-	workers map[string]WorkerStatus
+	mu       sync.RWMutex
+	workers  map[string]WorkerStatus
+	registry map[string]*worker.Worker
 }
 
 func NewStore() *Store {
 	return &Store{
-		workers: make(map[string]WorkerStatus),
+		workers:  make(map[string]WorkerStatus),
+		registry: make(map[string]*worker.Worker),
 	}
+}
+
+func (s *Store) RegisterWorker(id string, w *worker.Worker) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.registry[id] = w
+}
+
+func (s *Store) GetWorker(id string) (*worker.Worker, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	w, ok := s.registry[id]
+	return w, ok
 }
 
 func (s *Store) Set(ws WorkerStatus) {
