@@ -8,16 +8,17 @@ Practice bot that automates administration tasks through programmable workers (p
 
 ## 📋 Index
 
-- [Current status](#-current-status)
-- [Project flow](#-project-flow)
-- [Features](#-features)
-- [Technologies](#-technologies)
-- [Architecture](#-architecture)
-- [API Endpoints](#-api-endpoints)
-- [Requirements](#-requirements)
-- [Configuration](#-configuration)
-- [Usage](#-usage)
-- [Roadmap](#-roadmap)
+- [Current status](#current-status)
+- [Project flow](#project-flow)
+- [Features](#features)
+- [Technologies](#technologies)
+- [Architecture](#architecture)
+- [API Endpoints](#api-endpoints)
+- [Requirements](#requirements)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Roadmap](#roadmap)
+- [Changelog](#changelog)
 
 ---
 
@@ -88,7 +89,7 @@ flowchart TD
 
 | Technology | Use |
 |---|---|
-| [Go 1.24](https://go.dev/) | Main language |
+| [Go 1.26](https://go.dev/) | Main language |
 | [Gin](https://gin-gonic.com/) | HTTP REST API & CORS |
 | [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) | UI Dashboard |
 | [Vite](https://vite.dev/) | Frontend build tool |
