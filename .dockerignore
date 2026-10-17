@@ -6,3 +6,4 @@ storage/state.json
 *.test
 README.md
 CHANGELOG.md
+/ui
