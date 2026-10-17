@@ -11,3 +11,4 @@ storage/state.json
 .env
 # agents
 .kilo
+.agents

@@ -13,6 +13,7 @@ Practice bot that automates administration tasks through programmable workers (p
 - [Features](#-features)
 - [Technologies](#-technologies)
 - [Architecture](#-architecture)
+- [API Endpoints](#-api-endpoints)
 - [Requirements](#-requirements)
 - [Configuration](#-configuration)
 - [Usage](#-usage)
@@ -25,9 +26,11 @@ Practice bot that automates administration tasks through programmable workers (p
 | Module | Status | Detail |
 |---|---|---|
 | **Aiven** | 🟢 Active | Production worker: checks and starts powered-off services |
-| **Aternos** | 🔴 Disabled | Removed from `main` due to headless and Cloudflare issues |
 | **Supabase** | 🟢 Active | Worker that monitors Supabase projects and restores inactive ones |
+| **HTTP API** | 🟢 Active | REST endpoints for status monitoring and manual triggers |
+| **UI Dashboard** | 🟡 In Dev | Web dashboard consuming the backend API |
 | **Logger** | 🟢 Active | Centralized structured logging system |
+| **Aternos** | 🔴 Disabled | Removed from `main` due to headless and Cloudflare issues |
 
 > [!WARNING]
 > The **Aternos** module is disabled due to **Cloudflare** blocks in headless mode. Its code is retained under `internal/integrations/aternos` pending review: it will be replaced with another strategy or deleted in the future.
@@ -67,6 +70,9 @@ flowchart TD
 | Centralized logger | `internal/logger` | Structured logs with attributes and per-module context |
 | Signal handling | `cmd/main.go` | Clean shutdown with `SIGINT`/`SIGTERM` (Ctrl+C) |
 | Dynamic worker activation | `internal/config` | Enables each worker via environment variables (`*_ENABLED`) |
+| In-memory status store | `internal/status` | Thread-safe store for worker status and resource state |
+| REST API | `internal/api` | Endpoints to inspect status and trigger runs on demand |
+| Manual trigger | `internal/worker` | Execute task cycles immediately outside interval via POST trigger |
 
 ### ⏸️ Paused features (Aternos module)
 
@@ -83,12 +89,15 @@ flowchart TD
 | Technology | Use |
 |---|---|
 | [Go 1.24](https://go.dev/) | Main language |
-| [playwright-go](https://github.com/mxschmitt/playwright-go) | Browser automation *(paused)* |
-| Chromium | Controlled browser *(paused)* |
-| [go-mcping](https://github.com/iverly/go-mcping) | Minecraft server ping *(paused)* |
+| [Gin](https://gin-gonic.com/) | HTTP REST API & CORS |
+| [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) | UI Dashboard |
+| [Vite](https://vite.dev/) | Frontend build tool |
 | Aiven REST API | Cloud service management |
 | Supabase REST API | Supabase project management |
 | Docker | Multi-stage build for deploy |
+| [playwright-go](https://github.com/mxschmitt/playwright-go) | Browser automation *(paused)* |
+| Chromium | Controlled browser *(paused)* |
+| [go-mcping](https://github.com/iverly/go-mcping) | Minecraft server ping *(paused)* |
 
 ---
 
@@ -98,24 +107,34 @@ Project organized under **clean architecture** principles (ports and adapters):
 
 ```
 cmd/
-└── main.go               CLI application: orchestrates the workers
+└── main.go                 # App entrypoint: starts workers & HTTP server
 internal/
-├── config/               Per-module configurations
+├── api/                    # HTTP layer (Gin handlers & router)
+├── config/                 # Module configurations from .env
 ├── integrations/
-│   ├── aiven/            Client and checker for the Aiven API
-│   ├── supabase/         Client and checker for the Supabase API
-│   └── aternos/          Paused integration
-│       ├── adapters/     Playwright and GitHub Gist implementations
-│       ├── automation/   Aternos server startup automation
-│       ├── minecraft/    Server status check by ping
-│       ├── ports/        BrowserManager and StateStorage interfaces
-│       └── services/    Aternos bot pipeline
-├── logger/               Centralized logging system
-└── worker/               Periodic task execution (interval + cooldown)
-storage/                  Browser session persistence (state.json)
+│   ├── aiven/              # Client & checker for Aiven API
+│   ├── supabase/           # Client & checker for Supabase API
+│   └── aternos/            # Paused integration (Minecraft / Playwright)
+├── logger/                 # Structured logging system (slog)
+├── status/                 # Thread-safe in-memory status store & registry
+└── worker/                 # Periodic task engine & trigger channel
+storage/                    # Browser session persistence (state.json)
+ui/                         # Frontend dashboard (React + TypeScript + Vite)
 ```
 
 > Modules marked as *paused* in [Current status](#-current-status) are not executed from `main`. Provider-specific code stays inside its integration; shared configuration, logging, and worker infrastructure remain outside `internal/integrations`.
+
+---
+
+## 🔌 API Endpoints
+
+Base URL: `http://localhost:8080`
+
+| Method | Endpoint | Receives | Response | Description |
+|---|---|---|---|---|
+| `GET` | `/api/v1/` | — | `200` `{"status":"ok"}` | API healthcheck |
+| `GET` | `/api/v1/status` | — | `200` `WorkerStatus[]` | Retorna el estado y servicios monitoreados de cada worker activo |
+| `POST` | `/api/v1/workers/:id/trigger` | URL param `:id`<br/>(`aiven`, `supabase`) | `202` `{"message":"trigger sent","worker":":id"}`<br/>`404` `{"error":"worker not found or not active"}`<br/>`409` `{"error":"worker is busy or a trigger is already pending"}` | Ejecuta inmediatamente el ciclo del worker sin esperar el intervalo |
 
 ---
 
