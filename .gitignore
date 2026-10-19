@@ -12,3 +12,6 @@ storage/state.json
 # agents
 .kilo
 .agents
+
+# documentation / local specs
+API.es.md

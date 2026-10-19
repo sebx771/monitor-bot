@@ -1,105 +1,105 @@
-# Guía de Consumo de la API — Monitor Bot
+# API Consumption Guide — Monitor Bot
 
-> Documentación técnica detallada para la integración y consumo de la API REST de **Monitor Bot**.
+> Detailed technical documentation for integrating and consuming the **Monitor Bot** REST API.
 
 ---
 
-## 📌 Índice
+## 📌 Table of Contents
 
-1. [Información General](#-información-general)
-2. [Políticas de CORS y Seguridad](#-políticas-de-cors-y-seguridad)
-3. [Códigos de Respuesta HTTP](#-códigos-de-respuesta-http)
-4. [Modelos y Esquemas de Datos](#-modelos-y-esquemas-de-datos)
-5. [Endpoints de la API](#-endpoints-de-la-api)
+1. [General Information](#-general-information)
+2. [CORS Policies & Security](#-cors-policies--security)
+3. [HTTP Status Codes](#-http-status-codes)
+4. [Data Models & Schemas](#-data-models--schemas)
+5. [API Endpoints](#-api-endpoints)
    - [Healthcheck](#1-healthcheck)
-   - [Consultar Estado General](#2-consultar-estado-general)
-   - [Disparar Worker Manualmente](#3-disparar-worker-manualmente)
-6. [Ejemplos de Consumo](#-ejemplos-de-consumo)
+   - [Get General Status](#2-get-general-status)
+   - [Manually Trigger a Worker](#3-manually-trigger-a-worker)
+6. [Consumption Examples](#-consumption-examples)
    - [cURL](#curl)
    - [TypeScript / JavaScript (Fetch API)](#typescript--javascript-fetch-api)
    - [React Hook (Frontend Dashboard)](#react-hook-frontend-dashboard)
    - [Python (requests)](#python-requests)
-7. [Buenas Prácticas y Manejo de Errores](#-buenas-prácticas-y-manejo-de-errores)
+7. [Best Practices & Error Handling](#-best-practices--error-handling)
 
 ---
 
-## 🌐 Información General
+## 🌐 General Information
 
-- **Base URL predeterminada:** `http://localhost:8080`
-- **Prefijo de versión:** `/api/v1`
-- **Formato de intercambio:** `application/json`
-- **Modo del servidor:** Configurable mediante la variable de entorno `GIN_MODE` (`release` por defecto, o `debug`).
-- **Autenticación:** Actualmente la API opera en red local/privada sin cabeceras de autorización obligatorias.
+- **Default Base URL:** `http://localhost:8080`
+- **Version Prefix:** `/api/v1`
+- **Exchange Format:** `application/json`
+- **Server Mode:** Configurable via the `GIN_MODE` environment variable (`release` by default, or `debug`).
+- **Authentication:** Currently, the API operates on a local/private network with no mandatory authorization headers required.
 
 ---
 
-## 🛡️ Políticas de CORS y Seguridad
+## 🛡️ CORS Policies & Security
 
-El router ([internal/api/router.go](file:///c:/Users/Usuario/OneDrive/Desktop/aternos-bot/internal/api/router.go)) incluye middleware CORS preconfigurado para aplicaciones web:
+The router ([internal/api/router.go](file:///c:/Users/Usuario/OneDrive/Desktop/aternos-bot/internal/api/router.go)) includes preconfigured CORS middleware for web applications:
 
-| Parámetro | Configuración |
+| Parameter | Configuration |
 |---|---|
-| **Orígenes Permitidos (`AllowOrigins`)** | `http://localhost:5173` (Vite dev server)<br/>`http://localhost:3000` |
-| **Métodos Permitidos (`AllowMethods`)** | `GET`, `POST`, `OPTIONS` |
-| **Cabeceras Permitidas (`AllowHeaders`)** | `Origin`, `Content-Type`, `Accept` |
-| **Cabeceras Expuestas (`ExposeHeaders`)** | `Content-Length` |
-| **Credenciales (`AllowCredentials`)** | `true` |
-| **Tiempo de caché Preflight (`MaxAge`)** | `12 horas` |
+| **Allowed Origins (`AllowOrigins`)** | `http://localhost:5173` (Vite dev server)<br/>`http://localhost:3000` |
+| **Allowed Methods (`AllowMethods`)** | `GET`, `POST`, `OPTIONS` |
+| **Allowed Headers (`AllowHeaders`)** | `Origin`, `Content-Type`, `Accept` |
+| **Exposed Headers (`ExposeHeaders`)** | `Content-Length` |
+| **Allow Credentials (`AllowCredentials`)** | `true` |
+| **Preflight Cache Duration (`MaxAge`)** | `12 hours` |
 
 > [!NOTE]
-> Si despliegas un frontend en un dominio o puerto distinto, debes añadirlo a la lista `AllowOrigins` en `internal/api/router.go`.
+> If deploying a frontend on a different domain or port, you must add it to the `AllowOrigins` list in `internal/api/router.go`.
 
 ---
 
-## 🚦 Códigos de Respuesta HTTP
+## 🚦 HTTP Status Codes
 
-| Código | Significado | Contexto en Monitor Bot |
+| Code | Meaning | Context in Monitor Bot |
 |---|---|---|
-| `200 OK` | Petición exitosa | Devuelve el healthcheck o la lista de workers activos con sus servicios. |
-| `202 Accepted` | Petición aceptada | Se ha recibido y encolado la señal de trigger manual para el worker. |
-| `404 Not Found` | Recurso no encontrado | El worker especificado en la URL no existe o no se encuentra activo. |
-| `409 Conflict` | Conflicto de concurrencia | El worker ya se encuentra ocupado ejecutando una tarea o ya tiene un trigger pendiente. |
-| `500 Internal Server Error` | Error interno del servidor | Fallo inesperado en el servidor HTTP. |
+| `200 OK` | Successful request | Returns healthcheck status or list of active workers and their monitored services. |
+| `202 Accepted` | Accepted request | Manual trigger request received and queued for execution. |
+| `404 Not Found` | Resource not found | The specified worker does not exist or is inactive. |
+| `409 Conflict` | Concurrency conflict | The worker is already busy executing a cycle or already has a pending trigger. |
+| `500 Internal Server Error` | Server error | Unexpected failure within the HTTP server. |
 
 ---
 
-## 📦 Modelos y Esquemas de Datos
+## 📦 Data Models & Schemas
 
 ### 1. `WorkerStatus`
 
-Representa el estado actual de un worker en el almacén en memoria ([internal/status/workers_status.go](file:///c:/Users/Usuario/OneDrive/Desktop/aternos-bot/internal/status/workers_status.go)):
+Represents the current state of a worker stored in the in-memory registry ([internal/status/workers_status.go](file:///c:/Users/Usuario/OneDrive/Desktop/aternos-bot/internal/status/workers_status.go)):
 
-| Campo | Tipo | Requerido | Descripción |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `id` | `string` | Sí | Identificador único del worker (`"aiven"`, `"supabase"`). |
-| `name` | `string` | Sí | Nombre para mostrar (`"Aiven"`, `"Supabase"`). |
-| `status` | `string` | Sí | Estado del worker (`"operational"`, `"degraded"`, `"error"`, `"paused"`). |
-| `last_run` | `string` (ISO 8601) | Sí | Timestamp UTC de la última ejecución (ej. `"2026-10-17T16:15:30Z"`). |
-| `services` | `MonitoredService[]` | Sí | Colección de servicios o proyectos supervisados por este worker. |
-| `message` | `string` | No | Mensaje descriptivo opcional (motivo de degradación o error). |
+| `id` | `string` | Yes | Unique worker identifier (`"aiven"`, `"supabase"`). |
+| `name` | `string` | Yes | Display name (`"Aiven"`, `"Supabase"`). |
+| `status` | `string` | Yes | Worker health status (`"operational"`, `"degraded"`, `"error"`, `"paused"`). |
+| `last_run` | `string` (ISO 8601) | Yes | UTC timestamp of last cycle execution (e.g. `"2026-10-17T16:15:30Z"`). |
+| `services` | `MonitoredService[]` | Yes | Collection of services or projects supervised by this worker. |
+| `message` | `string` | No | Optional descriptive message (reason for error or degraded state). |
 
-#### Valores de `Status`:
-- `"operational"`: Todos los servicios o proyectos fueron verificados sin errores.
-- `"degraded"`: Operación parcial (algunos proyectos o comprobaciones fallaron, pero no todos).
-- `"error"`: Fallo crítico en el ciclo de trabajo (todos los proyectos fallaron o error en la API externa).
-- `"paused"`: El worker está pausado.
+#### `status` Values:
+- `"operational"`: All checked services/projects passed with no errors.
+- `"degraded"`: Partial failure (some projects/services failed, but not all).
+- `"error"`: Critical failure (all checks failed or external API error).
+- `"paused"`: The worker is paused.
 
 ---
 
 ### 2. `MonitoredService`
 
-Detalle de un recurso individual dentro de un worker:
+Details for an individual resource tracked by a worker:
 
-| Campo | Tipo | Requerido | Descripción |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `target` | `string` | Sí | Nombre o referencia del recurso (ej. `"mysql-13396a35"`, `"my-project-ref"`). |
-| `scope` | `string` | No | Ámbito o identificador del proyecto padre (ej. `"terranova1244-6338"`). |
-| `state` | `string` | Sí | Estado reportado por el proveedor (ej. `"RUNNING"`, `"POWEROFF"`, `"ACTIVE_HEALTHY"`, `"INACTIVE"`). |
-| `message` | `string` | No | Detalle o mensaje de error asociado al servicio si aplica. |
+| `target` | `string` | Yes | Resource name or identifier (e.g. `"mysql-13396a35"`, `"my-project-ref"`). |
+| `scope` | `string` | No | Scope or parent project identifier (e.g. `"terranova1244-6338"`). |
+| `state` | `string` | Yes | State reported by provider (e.g. `"RUNNING"`, `"POWEROFF"`, `"ACTIVE_HEALTHY"`, `"INACTIVE"`). |
+| `message` | `string` | No | Optional error or descriptive message. |
 
 ---
 
-### 3. Definiciones TypeScript (para Frontend o Node.js)
+### 3. TypeScript Definitions (for Frontend / Node.js)
 
 ```typescript
 export type WorkerHealthStatus = 'operational' | 'degraded' | 'error' | 'paused';
@@ -132,19 +132,19 @@ export interface ErrorResponse {
 
 ---
 
-## 🔌 Endpoints de la API
+## 🔌 API Endpoints
 
 ### 1. Healthcheck
 
-Verifica si la API REST está en línea y lista para recibir peticiones.
+Check whether the REST API is running and ready to handle requests.
 
-- **Método:** `GET`
-- **Ruta:** `/api/v1/`
-- **Autenticación:** No requerida
+- **Method:** `GET`
+- **Route:** `/api/v1/`
+- **Authentication:** None
 - **Headers:**
   - `Accept: application/json`
 
-#### Respuesta Exitosa (`200 OK`):
+#### Success Response (`200 OK`):
 ```json
 {
   "status": "ok"
@@ -153,17 +153,17 @@ Verifica si la API REST está en línea y lista para recibir peticiones.
 
 ---
 
-### 2. Consultar Estado General
+### 2. Get General Status
 
-Obtiene la lista de todos los workers registrados y el estado de sus servicios monitoreados.
+Fetches all registered workers along with their monitored service states.
 
-- **Método:** `GET`
-- **Ruta:** `/api/v1/status`
-- **Autenticación:** No requerida
+- **Method:** `GET`
+- **Route:** `/api/v1/status`
+- **Authentication:** None
 - **Headers:**
   - `Accept: application/json`
 
-#### Respuesta Exitosa (`200 OK`):
+#### Success Response (`200 OK`):
 ```json
 [
   {
@@ -202,27 +202,27 @@ Obtiene la lista de todos los workers registrados y el estado de sus servicios m
 ```
 
 > [!TIP]
-> Si no hay workers activos (por ejemplo, si todos los módulos están deshabilitados en el `.env`), el endpoint retornará una lista vacía `[]`.
+> If no workers are active (for example, if all worker modules are disabled in `.env`), the endpoint returns an empty array `[]`.
 
 ---
 
-### 3. Disparar Worker Manualmente
+### 3. Manually Trigger a Worker
 
-Fuerza la ejecución inmediata del ciclo de monitoreo/acción del worker indicado, sin esperar a que transcurra el intervalo de chequeo programado.
+Forces an immediate cycle for the specified worker without waiting for its scheduled ticker interval.
 
-- **Método:** `POST`
-- **Ruta:** `/api/v1/workers/:id/trigger`
-- **Parámetros de URL:**
-  - `:id` (string, obligatorio): ID del worker a ejecutar. IDs válidos en la configuración actual:
+- **Method:** `POST`
+- **Route:** `/api/v1/workers/:id/trigger`
+- **URL Parameters:**
+  - `:id` (string, required): ID of the worker to trigger. Valid IDs in the current setup:
     - `aiven`
     - `supabase`
 - **Headers:**
-  - `Content-Type: application/json` (opcional)
-- **Cuerpo de la petición:** Vacío (no requiere payload).
+  - `Content-Type: application/json` (optional)
+- **Request Body:** Empty (no payload required).
 
-#### Respuestas Posibles:
+#### Possible Responses:
 
-##### 🟢 `202 Accepted` — Trigger encolado correctamente
+##### 🟢 `202 Accepted` — Trigger enqueued
 ```json
 {
   "message": "trigger sent",
@@ -230,16 +230,16 @@ Fuerza la ejecución inmediata del ciclo de monitoreo/acción del worker indicad
 }
 ```
 
-##### 🟡 `409 Conflict` — Worker ocupado
-Ocurre si el worker ya se encuentra en ejecución o si ya existe una solicitud de trigger pendiente en su canal interno.
+##### 🟡 `409 Conflict` — Worker busy
+Returned if the worker is currently executing a cycle or already has a pending trigger in its internal channel.
 ```json
 {
   "error": "worker is busy or a trigger is already pending"
 }
 ```
 
-##### 🔴 `404 Not Found` — Worker inexistente o inactivo
-Ocurre si el identificador `:id` no coincide con ningún worker registrado en el `Store` (o si dicho módulo no está habilitado en `.env`).
+##### 🔴 `404 Not Found` — Worker not found or inactive
+Returned if `:id` does not match any registered worker in the `Store` (or if its module is disabled in `.env`).
 ```json
 {
   "error": "worker not found or not active"
@@ -248,28 +248,28 @@ Ocurre si el identificador `:id` no coincide con ningún worker registrado en el
 
 ---
 
-## 💻 Ejemplos de Consumo
+## 💻 Consumption Examples
 
 ### cURL
 
-#### 1. Comprobar salud de la API
+#### 1. Check API Health
 ```bash
 curl -X GET http://localhost:8080/api/v1/
 ```
 
-#### 2. Consultar el estado de todos los workers
+#### 2. Get status for all workers
 ```bash
 curl -X GET http://localhost:8080/api/v1/status \
   -H "Accept: application/json"
 ```
 
-#### 3. Ejecutar manualmente el worker de Aiven
+#### 3. Manually trigger the Aiven worker
 ```bash
 curl -X POST http://localhost:8080/api/v1/workers/aiven/trigger \
   -H "Accept: application/json"
 ```
 
-#### 4. Ejecutar manualmente el worker de Supabase
+#### 4. Manually trigger the Supabase worker
 ```bash
 curl -X POST http://localhost:8080/api/v1/workers/supabase/trigger \
   -H "Accept: application/json"
@@ -279,13 +279,13 @@ curl -X POST http://localhost:8080/api/v1/workers/supabase/trigger \
 
 ### TypeScript / JavaScript (Fetch API)
 
-Cliente reutilizable con manejo tipado de respuestas:
+Reusable client with typed response handling:
 
 ```typescript
 const API_BASE_URL = 'http://localhost:8080/api/v1';
 
 /**
- * Obtiene el estado actual de los workers
+ * Fetches the current status of all workers
  */
 export async function fetchWorkerStatus(): Promise<WorkerStatus[]> {
   const response = await fetch(`${API_BASE_URL}/status`, {
@@ -303,7 +303,7 @@ export async function fetchWorkerStatus(): Promise<WorkerStatus[]> {
 }
 
 /**
- * Solicita el disparo manual de un worker por ID
+ * Requests an immediate manual trigger for a worker by ID
  */
 export async function triggerWorker(workerId: string): Promise<TriggerResponse> {
   const response = await fetch(`${API_BASE_URL}/workers/${workerId}/trigger`, {
@@ -320,14 +320,14 @@ export async function triggerWorker(workerId: string): Promise<TriggerResponse> 
   }
 
   if (response.status === 409) {
-    throw new Error('El worker ya está ocupado o tiene una ejecución pendiente.');
+    throw new Error('Worker is already busy or a trigger is already pending.');
   }
 
   if (response.status === 404) {
-    throw new Error(`El worker "${workerId}" no existe o está inactivo.`);
+    throw new Error(`Worker "${workerId}" not found or inactive.`);
   }
 
-  throw new Error(data.error || 'Error inesperado al disparar el worker.');
+  throw new Error(data.error || 'Unexpected error while triggering worker.');
 }
 ```
 
@@ -335,7 +335,7 @@ export async function triggerWorker(workerId: string): Promise<TriggerResponse> 
 
 ### React Hook (Frontend Dashboard)
 
-Hook personalizado para React (`ui/src/hooks/useWorkerStatus.ts`) con sondeo periódico (polling) y trigger:
+Custom React hook (`ui/src/hooks/useWorkerStatus.ts`) with polling and trigger dispatch:
 
 ```tsx
 import { useState, useEffect, useCallback } from 'react';
@@ -355,8 +355,8 @@ export function useWorkerStatus(pollIntervalMs: number = 5000) {
       const data = await res.json();
       setWorkers(data);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Error al conectar con la API');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error connecting to API');
     } finally {
       setLoading(false);
     }
@@ -375,10 +375,10 @@ export function useWorkerStatus(pollIntervalMs: number = 5000) {
     const result = await res.json();
 
     if (!res.ok) {
-      throw new Error(result.error || 'No se pudo activar el worker');
+      throw new Error(result.error || 'Failed to trigger worker');
     }
 
-    // Refrescar estado poco después para reflejar cambios
+    // Refresh status shortly after to reflect changes
     setTimeout(refreshStatus, 1000);
     return result;
   };
@@ -391,7 +391,7 @@ export function useWorkerStatus(pollIntervalMs: number = 5000) {
 
 ### Python (requests)
 
-Script de automatización en Python:
+Automation script in Python:
 
 ```python
 import requests
@@ -405,49 +405,49 @@ def check_status():
         response = requests.get(url, timeout=5)
         response.raise_for_status()
         workers = response.json()
-        print(f"Workers registrados: {len(workers)}")
+        print(f"Registered workers: {len(workers)}")
         for w in workers:
-            print(f"- [{w['status'].upper()}] {w['name']} (ID: {w['id']}) - Última ejecución: {w['last_run']}")
+            print(f"- [{w['status'].upper()}] {w['name']} (ID: {w['id']}) - Last run: {w['last_run']}")
             for s in w.get('services', []):
                 scope_str = f" ({s['scope']})" if 'scope' in s else ""
                 print(f"    * {s['target']}{scope_str}: {s['state']}")
     except requests.RequestException as e:
-        print(f"Error al consultar la API: {e}")
+        print(f"Error querying API: {e}")
 
 def trigger_worker(worker_id: str):
     url = f"{BASE_URL}/workers/{worker_id}/trigger"
     try:
         response = requests.post(url, timeout=5)
         if response.status_code == 202:
-            print(f"Worker '{worker_id}' disparado exitosamente: {response.json()}")
+            print(f"Worker '{worker_id}' triggered successfully: {response.json()}")
         elif response.status_code == 409:
-            print(f"Aviso: El worker '{worker_id}' ya está ocupado o pendiente.")
+            print(f"Notice: Worker '{worker_id}' is already busy or pending.")
         elif response.status_code == 404:
-            print(f"Error: El worker '{worker_id}' no existe o está inhabilitado.")
+            print(f"Error: Worker '{worker_id}' does not exist or is inactive.")
         else:
-            print(f"Error HTTP {response.status_code}: {response.text}")
+            print(f"HTTP Error {response.status_code}: {response.text}")
     except requests.RequestException as e:
-        print(f"Error de conexión: {e}")
+        print(f"Connection error: {e}")
 
 if __name__ == "__main__":
     check_status()
-    print("\nDisparando worker de Aiven...")
+    print("\nTriggering Aiven worker...")
     trigger_worker("aiven")
 ```
 
 ---
 
-## 💡 Buenas Prácticas y Manejo de Errores
+## 💡 Best Practices & Error Handling
 
-1. **Gestión de Concurrencia (`409 Conflict`):**
-   - El canal de disparo manual (`triggerCh`) tiene una capacidad de búfer de 1.
-   - Si un usuario pulsa repetidamente un botón en la UI, capture el error `409` y muestre una notificación amigable como *"El worker ya se encuentra en ejecución"* en lugar de un error crítico.
-   - Deshabilite temporalmente el botón de disparo durante 3-5 segundos tras recibir un código `202`.
+1. **Concurrency Management (`409 Conflict`):**
+   - The trigger channel (`triggerCh`) has a buffer capacity of 1.
+   - If a user clicks a button rapidly in the UI, catch the `409` code and display a friendly notification like *"Worker is already running"* instead of a crash or red alert.
+   - Temporarily disable the trigger button for 3-5 seconds after receiving a `202` response.
 
-2. **Intervalo de Sondeo (Polling):**
-   - El endpoint `/api/v1/status` lee directamente del almacén en memoria protegido por `sync.RWMutex`, por lo que es extremadamente rápido y ligero.
-   - Para dashboards en tiempo real, un intervalo de sondeo entre **3 y 10 segundos** es ideal.
+2. **Polling Interval:**
+   - The `/api/v1/status` endpoint reads directly from an in-memory store protected by a `sync.RWMutex`, making it extremely fast and lightweight.
+   - For real-time dashboards, a polling interval between **3 and 10 seconds** is optimal.
 
-3. **Workers Habilitados dinámicamente:**
-   - Si un worker (`AIVEN_ENABLED=false` o `SUPABASE_ENABLED=false`) está deshabilitado en `.env`, no se registrará en el `Store`. Por tanto, el endpoint `/api/v1/workers/:id/trigger` responderá `404 Not Found`.
-   - Consulte siempre primero `/api/v1/status` para conocer qué IDs de workers están activos antes de presentar opciones de trigger en su interfaz.
+3. **Dynamically Enabled Workers:**
+   - If a worker (`AIVEN_ENABLED=false` or `SUPABASE_ENABLED=false`) is disabled in `.env`, it will not register in the `Store`. As a result, the `/api/v1/workers/:id/trigger` endpoint will return `404 Not Found`.
+   - Always query `/api/v1/status` first to know which worker IDs are currently active before displaying trigger options in your UI.
