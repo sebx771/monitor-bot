@@ -137,6 +137,9 @@ Base URL: `http://localhost:8080`
 | `GET` | `/api/v1/status` | — | `200` `WorkerStatus[]` | Retorna el estado y servicios monitoreados de cada worker activo |
 | `POST` | `/api/v1/workers/:id/trigger` | URL param `:id`<br/>(`aiven`, `supabase`) | `202` `{"message":"trigger sent","worker":":id"}`<br/>`404` `{"error":"worker not found or not active"}`<br/>`409` `{"error":"worker is busy or a trigger is already pending"}` | Ejecuta inmediatamente el ciclo del worker sin esperar el intervalo |
 
+> [!TIP]
+> Para una guía completa y detallada con ejemplos en cURL, TypeScript, React y Python, consulta la [Guía de Consumo de la API (API.md)](API.md).
+
 ---
 
 ## 📦 Requirements
