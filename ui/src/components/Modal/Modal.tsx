@@ -1,7 +1,8 @@
 import { useEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import styles from "./Modal.module.css";
 
-interface ModalProps {
+export interface ModalProps {
     isOpen: boolean;
     onClose: () => void;
     title?: string;
@@ -10,29 +11,54 @@ interface ModalProps {
 
 export default function Modal({ isOpen, onClose, title, children }: ModalProps) {
     useEffect(() => {
+        if (!isOpen) return;
+
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") onClose();
+            if (e.key === "Escape") {
+                onClose();
+            }
         };
+
+        // Prevent body scrolling when modal is active
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+
         window.addEventListener("keydown", handleKeyDown);
         return () => {
+            document.body.style.overflow = previousOverflow;
             window.removeEventListener("keydown", handleKeyDown);
         };
-    }, [onClose]);
+    }, [isOpen, onClose]);
 
-    if (!isOpen) return null;
+    if (!isOpen || typeof document === "undefined") {
+        return null;
+    }
 
-    return (
-        <div className={styles.backdrop} onClick={onClose}>
-
-            <div className={styles.content} onClick={(e) => { e.stopPropagation(); }}>
+    return createPortal(
+        <div
+            className={styles.backdrop}
+            onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+        >
+            <div
+                className={styles.content}
+                onClick={(e) => e.stopPropagation()}
+            >
                 <header className={styles.header}>
                     {title && <h3 className={styles.title}>{title}</h3>}
-                    <button className={styles.closeButton} onClick={onClose}>
+                    <button
+                        type="button"
+                        className={styles.closeButton}
+                        onClick={onClose}
+                        aria-label="Close modal"
+                    >
                         ✕
                     </button>
                 </header>
                 <div className={styles.body}>{children}</div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
