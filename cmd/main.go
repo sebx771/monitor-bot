@@ -51,7 +51,7 @@ func main() {
 		return
 	}
 
-	r := api.SetupRouter(store)
+	r := api.SetupRouter(store, cfg)
 	srv:= &http.Server{Addr:":8080",Handler: r}
 	// goroutines for the server run
 	go func() {
