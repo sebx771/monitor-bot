@@ -9,7 +9,7 @@ import (
 
 
 type Config struct {
-	globalConfig  struct{} // leaving it like this for now, until I build the real structs
+	globalConfig  GlobalConfig 
 	aivenConfig   AivenConfig
 	aternosConfig  AternosConfig
 	supaBaseConfig SupabaseConfig
@@ -24,8 +24,11 @@ func NewConfig() (*Config, error){
 		return nil, err
 	}
 
-	// the other configs will be declared in this block to later instantiate
-	// the root config
+	global , err:= NewGlobalConfig()
+	if err!= nil {
+		return nil , err
+	}
+
 	aiven,err:= NewAivenConfig()
 	if err!= nil {
 		return nil , err
@@ -40,7 +43,7 @@ func NewConfig() (*Config, error){
 		return  nil , err 
 	}
 
-	
+	config.globalConfig= *global
     config.aivenConfig= *aiven
 	config.aternosConfig= *aternos
 	config.supaBaseConfig= *supabase
@@ -59,6 +62,10 @@ func (c *Config) GetAternosConfig() *AternosConfig {
 }
 func (c *Config) GetSupaBaseConfig() *SupabaseConfig{
 	return &c.supaBaseConfig
+}
+
+func (c *Config) GetGlobalConfig() *GlobalConfig {
+	return &c.globalConfig
 }
 
 
