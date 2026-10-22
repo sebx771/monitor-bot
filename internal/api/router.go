@@ -34,13 +34,13 @@ func SetupRouter(store *status.Store, cfg *config.Config) *gin.Engine {
 
 	v1 := r.Group("/api/v1")
 	{
-		// Endpoints públicos
+		// Public endpoints
 		v1.GET("/", func(ctx *gin.Context) {
 			ctx.JSON(http.StatusOK, gin.H{"status": "ok"})
 		})
 		v1.GET("/status", handler.GetStatus)
 
-		// Endpoints protegidos por API Key
+		// API key-protected endpoints
 		secretKey := cfg.GetGlobalConfig().GetSecretKey()
 		protected := v1.Group("")
 		protected.Use(middlewares.ApiKeyAuth(secretKey))

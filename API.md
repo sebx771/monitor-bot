@@ -29,7 +29,7 @@
 - **Version Prefix:** `/api/v1`
 - **Exchange Format:** `application/json`
 - **Server Mode:** Configurable via the `GIN_MODE` environment variable (`release` by default, or `debug`).
-- **Authentication:** Currently, the API operates on a local/private network with no mandatory authorization headers required.
+- **Authentication:** The healthcheck and status endpoints are public. Manually triggering a worker requires the `X-API-Key` header, whose value is configured with the `SECRET_KEY` environment variable.
 
 ---
 
@@ -41,7 +41,7 @@ The router ([internal/api/router.go](file:///c:/Users/Usuario/OneDrive/Desktop/a
 |---|---|
 | **Allowed Origins (`AllowOrigins`)** | `http://localhost:5173` (Vite dev server)<br/>`http://localhost:3000` |
 | **Allowed Methods (`AllowMethods`)** | `GET`, `POST`, `OPTIONS` |
-| **Allowed Headers (`AllowHeaders`)** | `Origin`, `Content-Type`, `Accept` |
+| **Allowed Headers (`AllowHeaders`)** | `Origin`, `Content-Type`, `Accept`, `X-API-Key` |
 | **Exposed Headers (`ExposeHeaders`)** | `Content-Length` |
 | **Allow Credentials (`AllowCredentials`)** | `true` |
 | **Preflight Cache Duration (`MaxAge`)** | `12 hours` |
@@ -57,6 +57,7 @@ The router ([internal/api/router.go](file:///c:/Users/Usuario/OneDrive/Desktop/a
 |---|---|---|
 | `200 OK` | Successful request | Returns healthcheck status or list of active workers and their monitored services. |
 | `202 Accepted` | Accepted request | Manual trigger request received and queued for execution. |
+| `401 Unauthorized` | Authentication failed | The trigger request is missing a valid `X-API-Key` header. |
 | `404 Not Found` | Resource not found | The specified worker does not exist or is inactive. |
 | `409 Conflict` | Concurrency conflict | The worker is already busy executing a cycle or already has a pending trigger. |
 | `500 Internal Server Error` | Server error | Unexpected failure within the HTTP server. |
@@ -212,12 +213,14 @@ Forces an immediate cycle for the specified worker without waiting for its sched
 
 - **Method:** `POST`
 - **Route:** `/api/v1/workers/:id/trigger`
+- **Authentication:** Required. Set the `X-API-Key` header to the value of the server's `SECRET_KEY` environment variable.
 - **URL Parameters:**
   - `:id` (string, required): ID of the worker to trigger. Valid IDs in the current setup:
     - `aiven`
     - `supabase`
 - **Headers:**
-  - `Content-Type: application/json` (optional)
+  - `X-API-Key: <SECRET_KEY>` (required)
+  - `Accept: application/json` (optional)
 - **Request Body:** Empty (no payload required).
 
 #### Possible Responses:
@@ -235,6 +238,14 @@ Returned if the worker is currently executing a cycle or already has a pending t
 ```json
 {
   "error": "worker is busy or a trigger is already pending"
+}
+```
+
+##### 🔒 `401 Unauthorized` — Missing or invalid API key
+Returned if the `X-API-Key` header is missing, empty, or does not match the server's `SECRET_KEY`.
+```json
+{
+  "error": "Access denied"
 }
 ```
 
@@ -266,23 +277,30 @@ curl -X GET http://localhost:8080/api/v1/status \
 #### 3. Manually trigger the Aiven worker
 ```bash
 curl -X POST http://localhost:8080/api/v1/workers/aiven/trigger \
-  -H "Accept: application/json"
+  -H "Accept: application/json" \
+  -H "X-API-Key: $SECRET_KEY"
 ```
 
 #### 4. Manually trigger the Supabase worker
 ```bash
 curl -X POST http://localhost:8080/api/v1/workers/supabase/trigger \
-  -H "Accept: application/json"
+  -H "Accept: application/json" \
+  -H "X-API-Key: $SECRET_KEY"
 ```
 
 ---
 
 ### TypeScript / JavaScript (Fetch API)
 
-Reusable client with typed response handling:
+Reusable client with typed response handling for a trusted server-side runtime. Load `API_KEY` from server-side secret configuration; do not expose `SECRET_KEY` in a browser bundle or a `VITE_*` variable. Browser applications should call their own backend, which can securely add the API key when forwarding the trigger request.
 
 ```typescript
 const API_BASE_URL = 'http://localhost:8080/api/v1';
+const API_KEY = process.env.SECRET_KEY;
+
+if (!API_KEY) {
+  throw new Error('SECRET_KEY is not configured');
+}
 
 /**
  * Fetches the current status of all workers
@@ -310,6 +328,7 @@ export async function triggerWorker(workerId: string): Promise<TriggerResponse> 
     method: 'POST',
     headers: {
       'Accept': 'application/json',
+      'X-API-Key': API_KEY,
     },
   });
 
@@ -327,6 +346,10 @@ export async function triggerWorker(workerId: string): Promise<TriggerResponse> 
     throw new Error(`Worker "${workerId}" not found or inactive.`);
   }
 
+  if (response.status === 401) {
+    throw new Error('Unauthorized: missing or invalid API key.');
+  }
+
   throw new Error(data.error || 'Unexpected error while triggering worker.');
 }
 ```
@@ -336,6 +359,8 @@ export async function triggerWorker(workerId: string): Promise<TriggerResponse> 
 ### React Hook (Frontend Dashboard)
 
 Custom React hook (`ui/src/hooks/useWorkerStatus.ts`) with polling and trigger dispatch:
+
+The status request can be made directly from the browser. For triggers, send the request to your application's backend proxy and have it add `X-API-Key`; never bundle the server secret in frontend code.
 
 ```tsx
 import { useState, useEffect, useCallback } from 'react';
@@ -369,7 +394,7 @@ export function useWorkerStatus(pollIntervalMs: number = 5000) {
   }, [refreshStatus, pollIntervalMs]);
 
   const trigger = async (workerId: string) => {
-    const res = await fetch(`${API_URL}/workers/${workerId}/trigger`, {
+    const res = await fetch(`/api/trigger/${workerId}`, {
       method: 'POST',
     });
     const result = await res.json();
@@ -395,9 +420,11 @@ Automation script in Python:
 
 ```python
 import requests
+import os
 import time
 
 BASE_URL = "http://localhost:8080/api/v1"
+API_KEY = os.environ["SECRET_KEY"]
 
 def check_status():
     url = f"{BASE_URL}/status"
@@ -417,13 +444,15 @@ def check_status():
 def trigger_worker(worker_id: str):
     url = f"{BASE_URL}/workers/{worker_id}/trigger"
     try:
-        response = requests.post(url, timeout=5)
+        response = requests.post(url, headers={"X-API-Key": API_KEY}, timeout=5)
         if response.status_code == 202:
             print(f"Worker '{worker_id}' triggered successfully: {response.json()}")
         elif response.status_code == 409:
             print(f"Notice: Worker '{worker_id}' is already busy or pending.")
         elif response.status_code == 404:
             print(f"Error: Worker '{worker_id}' does not exist or is inactive.")
+        elif response.status_code == 401:
+            print("Unauthorized: missing or invalid API key.")
         else:
             print(f"HTTP Error {response.status_code}: {response.text}")
     except requests.RequestException as e:
