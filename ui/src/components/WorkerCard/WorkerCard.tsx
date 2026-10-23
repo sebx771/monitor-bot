@@ -4,7 +4,11 @@ import "blobatar/motion.css";
 import { idle, mad, sleepy, thinking } from "blobatar/expression";
 import { WorkerStatus, type Worker } from "../../models/Worker";
 import { useWorkerTrigger } from "./hooks/useWorkerTrigger";
+import { useGaze } from "@blobatar/react/gaze";
+
 import styles from "./WorkerCard.module.css";
+import "blobatar/gaze.css";
+
 
 export interface WorkerCardProps {
   worker: Worker;
@@ -41,7 +45,10 @@ export default function WorkerCard({
     executeTrigger,
     tooltipText,
   } = useWorkerTrigger({ worker, onCustomTrigger: onTrigger });
-
+  const { ref } = useGaze({
+  travel: 10,
+  lookAt: "pointer",
+});
   const handleCardClick = () => {
     onSelect?.(worker);
   };
@@ -79,6 +86,7 @@ export default function WorkerCard({
       <div className={styles.blobWrapper}>
         <Blobatar
           name={worker.name}
+          ref={ref}
           size={size}
           animate={isHovered ? "always" : undefined}
           expression={expressions[worker.status] || idle}
