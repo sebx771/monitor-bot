@@ -12,8 +12,8 @@ import (
 
 	"github.com/sebx771/monitor-bot/internal/api"
 	config "github.com/sebx771/monitor-bot/internal/config"
-	"github.com/sebx771/monitor-bot/internal/integrations/aternos"
 	"github.com/sebx771/monitor-bot/internal/integrations/aiven"
+	"github.com/sebx771/monitor-bot/internal/integrations/aternos"
 	"github.com/sebx771/monitor-bot/internal/integrations/supabase"
 	"github.com/sebx771/monitor-bot/internal/logger"
 	"github.com/sebx771/monitor-bot/internal/status"
@@ -46,23 +46,36 @@ func main() {
 
 	log.Info("active modules", "|AIVEN|", aivenEnabled, "|ATERNOS|", aternosEnabled, "|SUPABASE|", supabaseEnabled)
 
+	if !aivenEnabled {
+		if err := status.StorePausedWorker(store, "aiven", "Aiven"); err != nil {
+			log.Error("error storing paused Aiven status", "error", err)
+		}
+	}
+	if !aternosEnabled {
+		if err := status.StorePausedWorker(store, "aternos", "Minecraft"); err != nil {
+			log.Error("error storing paused Minecraft status", "error", err)
+		}
+	}
+	if !supabaseEnabled {
+		if err := status.StorePausedWorker(store, "supabase", "Supabase"); err != nil {
+			log.Error("error storing paused Supabase status", "error", err)
+		}
+	}
+
 	if !aivenEnabled && !aternosEnabled && !supabaseEnabled {
-		log.Warn("no module enabled, no workers to run")
-		return
+		log.Warn("no module enabled; API will serve paused worker statuses")
 	}
 
 	r := api.SetupRouter(store, cfg)
-	srv:= &http.Server{Addr:":8080",Handler: r}
+	srv := &http.Server{Addr: ":8080", Handler: r}
 	// goroutines for the server run
 	go func() {
-        if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-            log.Error("error in HTTP server", "error", err)
-        }
-    }()
-  
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Error("error in HTTP server", "error", err)
+		}
+	}()
 
 	var wg sync.WaitGroup
-
 
 	// goroutine for the server stop (if context is done, stop the server)
 	wg.Add(1)
