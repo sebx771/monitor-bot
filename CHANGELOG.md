@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Paused worker statuses** (`cmd/main.go`, `internal/status`): disabled modules are now included in `GET /api/v1/status` with a `paused` status. The API remains available when all modules are disabled. This entry covers backend changes only; the UI is still under development and is not included.
+
+- **Dashboard and authentication in progress** (`/ui`, `internal/api`): work on the dashboard interface and authentication is still ongoing; the interface has been deployed to Vercel.
+
 ## [1.6.0] - 2026-10-16
 
 ### Added
