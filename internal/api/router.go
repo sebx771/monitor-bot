@@ -7,7 +7,9 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/sebx771/monitor-bot/internal/api/handlers"
 	"github.com/sebx771/monitor-bot/internal/api/middlewares"
+	"github.com/sebx771/monitor-bot/internal/auth"
 	"github.com/sebx771/monitor-bot/internal/config"
 	"github.com/sebx771/monitor-bot/internal/status"
 )
@@ -22,7 +24,11 @@ func SetupRouter(store *status.Store, cfg *config.Config) *gin.Engine {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:3000"},
+		AllowOrigins: []string{
+			"http://localhost:5173",
+			"http://localhost:3000",
+			// TODO: add production origin (e.g. https://your-app.vercel.app)
+		},
 		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "X-API-Key"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -30,22 +36,42 @@ func SetupRouter(store *status.Store, cfg *config.Config) *gin.Engine {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	handler := NewHandler(store)
+	globalCfg := cfg.GetGlobalConfig()
+
+	authSvc := auth.NewSessionService(
+		globalCfg.GetAdminUserName(),
+		globalCfg.GetAdminPasswordHash(),
+	)
+
+	statusHandler := handlers.NewStatusHandler(store)
+	authHandler := handlers.NewAuthHandler(authSvc)
 
 	v1 := r.Group("/api/v1")
 	{
-		// Public endpoints
+		// ── Public endpoints ──────────────────────────────────────────────
 		v1.GET("/", func(ctx *gin.Context) {
 			ctx.JSON(http.StatusOK, gin.H{"status": "ok"})
 		})
-		v1.GET("/status", handler.GetStatus)
+		v1.GET("/status", statusHandler.GetStatus)
+		v1.GET("/auth/me", authHandler.Me)
+		v1.POST("/auth/login", authHandler.Login)
 
-		// API key-protected endpoints
-		secretKey := cfg.GetGlobalConfig().GetSecretKey()
-		protected := v1.Group("")
-		protected.Use(middlewares.ApiKeyAuth(secretKey))
+		// ── Session-protected endpoints ────────────────────────────────────
+		sessionProtected := v1.Group("")
+		sessionProtected.Use(middlewares.SessionAuth(authSvc))
 		{
-			protected.POST("/workers/:id/trigger", handler.TriggerWorker)
+			sessionProtected.POST("/auth/logout", authHandler.Logout)
+			sessionProtected.POST("/workers/:id/trigger", statusHandler.TriggerWorker)
+		}
+
+		// ── Legacy API-key-protected endpoints (kept during migration) ─────
+		// Remove after confirming session auth works end-to-end.
+		secretKey := globalCfg.GetSecretKey()
+		if secretKey != "" {
+			apiKeyProtected := v1.Group("")
+			apiKeyProtected.Use(middlewares.ApiKeyAuth(secretKey))
+			// (no routes currently registered here; preserved for rollback)
+			_ = apiKeyProtected
 		}
 	}
 
