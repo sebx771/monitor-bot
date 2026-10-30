@@ -7,6 +7,11 @@ export interface HeaderProps {
   isRefreshing?: boolean;
   totalWorkers?: number;
   onToggleSidebar?: () => void;
+  // Auth props
+  isAuthenticated: boolean;
+  isAuthLoading: boolean;
+  onLoginClick: () => void;
+  onLogout: () => void;
 }
 
 export default function Header({
@@ -16,6 +21,10 @@ export default function Header({
   isRefreshing = false,
   totalWorkers = 0,
   onToggleSidebar,
+  isAuthenticated,
+  isAuthLoading,
+  onLoginClick,
+  onLogout,
 }: HeaderProps) {
   return (
     <header className={styles.header}>
@@ -80,17 +89,35 @@ export default function Header({
           disabled={isRefreshing}
           aria-label="Refresh workers status"
         >
-          <svg
-            className={styles.refreshIcon}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
+          <svg className={styles.refreshIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19" />
           </svg>
           <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
         </button>
+
+        {!isAuthLoading && (
+          isAuthenticated ? (
+            <button
+              type="button"
+              id="logout-btn"
+              className={styles.logoutBtn}
+              onClick={onLogout}
+              aria-label="Log out"
+            >
+              Logout
+            </button>
+          ) : (
+            <button
+              type="button"
+              id="admin-login-btn"
+              className={styles.loginBtn}
+              onClick={onLoginClick}
+              aria-label="Admin login"
+            >
+              Admin Login
+            </button>
+          )
+        )}
       </div>
     </header>
   );

@@ -11,7 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - **Paused worker statuses** (`cmd/main.go`, `internal/status`): disabled modules are now included in `GET /api/v1/status` with a `paused` status. The API remains available when all modules are disabled. This entry covers backend changes only; the UI is still under development and is not included.
 
-- **Dashboard and authentication in progress** (`/ui`, `internal/api`): work on the dashboard interface and authentication is still ongoing; the interface has been deployed to Vercel.
+- **Admin authentication for manual worker triggers** (`internal/auth`, `internal/api`): added bcrypt-backed credential verification, in-memory sessions, and session-protected trigger endpoints.
+- **Dashboard admin sign-in** (`ui`): added login/logout controls and a login modal backed by the admin session API; status endpoints remain public.
+
+### Changed
+
+- **API handler organization** (`internal/api`): split the former handler into dedicated authentication and status handlers.
 
 ## [1.6.0] - 2026-10-16
 

@@ -1,13 +1,16 @@
 import type { TriggerResponse, Worker } from "../models/Worker";
 import { API_BASE_URL } from "../core/config";
+import { mapApiWorkers } from "./workerMapper";
 
 /**
  * Sends a manual trigger request for a specific worker.
  * Endpoint: POST /api/v1/workers/:id/trigger
+ * /this function must be refactorize to complete with the new auth in trigger endpoint
  */
 export async function triggerWorker(workerId: string): Promise<TriggerResponse> {
   const response = await fetch(`${API_BASE_URL}/workers/${encodeURIComponent(workerId)}/trigger`, {
     method: "POST",
+    credentials: "include",
     headers: {
       Accept: "application/json",
     },
@@ -18,6 +21,10 @@ export async function triggerWorker(workerId: string): Promise<TriggerResponse> 
     data = await response.json();
   } catch {
     // If response is not JSON
+  }
+
+  if (response.status === 401) {
+    throw new Error("Only Admin can do this.");
   }
 
   if (response.status === 202) {
@@ -39,17 +46,20 @@ export async function triggerWorker(workerId: string): Promise<TriggerResponse> 
  * Fetches the current status of all workers.
  * Endpoint: GET /api/v1/status
  */
-export async function fetchWorkerStatus(): Promise<Worker[]> {
+export async function fetchWorkerStatus(signal?: AbortSignal): Promise<Worker[]> {
   const response = await fetch(`${API_BASE_URL}/status`, {
     method: "GET",
+    credentials: "include",
     headers: {
       Accept: "application/json",
     },
+    signal,
   });
 
   if (!response.ok) {
     throw new Error(`Error ${response.status}: ${response.statusText}`);
   }
 
-  return response.json();
+  const data: unknown = await response.json();
+  return mapApiWorkers(data);
 }

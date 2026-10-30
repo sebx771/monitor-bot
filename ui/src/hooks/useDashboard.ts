@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback } from "react";
-import { WorkerMock } from "../mock/Worker";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { WorkerStatus, type Worker } from "../models/Worker";
+import { fetchWorkerStatus } from "../services/workerApi";
 
 export interface DashboardStats {
   total: number;
@@ -9,12 +9,62 @@ export interface DashboardStats {
 }
 
 export function useDashboard() {
-  const [workers, setWorkers] = useState<Worker[]>(WorkerMock);
+  const [workers, setWorkers] = useState<Worker[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [refreshNotification, setRefreshNotification] = useState<string | null>(null);
+  const notificationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const loadWorkers = useCallback(async (isRefresh: boolean, signal?: AbortSignal) => {
+    if (isRefresh) {
+      setIsRefreshing(true);
+      setRefreshNotification(null);
+    }
+
+    try {
+      const nextWorkers = await fetchWorkerStatus(signal);
+      if (signal?.aborted) return;
+
+      setWorkers(nextWorkers);
+      setLoadError(null);
+
+      if (isRefresh) {
+        setRefreshNotification("Workers successfully synced.");
+        if (notificationTimeoutRef.current) {
+          clearTimeout(notificationTimeoutRef.current);
+        }
+        notificationTimeoutRef.current = setTimeout(() => {
+          setRefreshNotification(null);
+          notificationTimeoutRef.current = null;
+        }, 3000);
+      }
+    } catch (error: unknown) {
+      if (signal?.aborted) return;
+      setRefreshNotification(null);
+      setLoadError(error instanceof Error ? error.message : "Failed to load workers.");
+    } finally {
+      if (!signal?.aborted) {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadWorkers(false, controller.signal);
+
+    return () => {
+      controller.abort();
+      if (notificationTimeoutRef.current) {
+        clearTimeout(notificationTimeoutRef.current);
+      }
+    };
+  }, [loadWorkers]);
 
   // Filter workers based on query (name, id, status or monitored service targets)
   const filteredWorkers = useMemo(() => {
@@ -44,25 +94,10 @@ export function useDashboard() {
     return { total, operational, alertCount };
   }, [workers]);
 
-  // Refresh handler with simulated fetch & notification lifecycle
   const handleRefresh = useCallback(() => {
-    setIsRefreshing(true);
-    setRefreshNotification(null);
-
-    const refreshTimer = setTimeout(() => {
-      setWorkers([...WorkerMock]);
-      setIsRefreshing(false);
-      setRefreshNotification("Workers successfully synced.");
-
-      const notificationTimer = setTimeout(() => {
-        setRefreshNotification(null);
-      }, 3000);
-
-      return () => clearTimeout(notificationTimer);
-    }, 600);
-
-    return () => clearTimeout(refreshTimer);
-  }, []);
+    if (isLoading || isRefreshing) return;
+    void loadWorkers(true);
+  }, [isLoading, isRefreshing, loadWorkers]);
 
   const handleToggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);
@@ -86,7 +121,9 @@ export function useDashboard() {
     stats,
     searchQuery,
     setSearchQuery,
+    isLoading,
     isRefreshing,
+    loadError,
     refreshNotification,
     handleRefresh,
     selectedWorker,

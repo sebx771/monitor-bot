@@ -119,3 +119,60 @@
   border-radius: 8px;
   border: 1px dashed var(--border);
 }
+
+.triggerSection {
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--border);
+  margin-top: 0.25rem;
+}
+
+.triggerBtn {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.1s ease;
+  font-family: inherit;
+}
+
+.triggerBtn:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.triggerBtn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.triggerBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.triggerSuccess {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  color: #4ade80;
+  text-align: center;
+}
+
+.triggerError {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  color: #f87171;
+  text-align: center;
+}
+
+.authHint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #52525b;
+  font-style: italic;
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
