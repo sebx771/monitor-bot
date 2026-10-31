@@ -25,9 +25,7 @@ func SetupRouter(store *status.Store, cfg *config.Config) *gin.Engine {
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
-			"http://localhost:5173",
-			"http://localhost:3000",
-			// TODO: add production origin (e.g. https://your-app.vercel.app)
+			"https://monitor-bot-delta.vercel.app",
 		},
 		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "X-API-Key"},
