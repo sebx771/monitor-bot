@@ -18,7 +18,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, error }: LoginMod
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
+    return () => { document.removeEventListener("keydown", handleKey); };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
@@ -34,7 +34,7 @@ export default function LoginModal({ isOpen, onClose, onLogin, error }: LoginMod
       {/* Stop propagation so clicking the card doesn't close the modal */}
       <div
         className={styles.content}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); }}
       >
         <LoginForm onLogin={onLogin} onClose={onClose} error={error} />
       </div>

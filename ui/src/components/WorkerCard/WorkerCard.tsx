@@ -77,8 +77,8 @@ export default function WorkerCard({
       className={styles.card}
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => { setIsHovered(true); }}
+      onMouseLeave={() => { setIsHovered(false); }}
       role="button"
       tabIndex={0}
       aria-label={`Worker ${worker.name}, status: ${worker.status}. Click to view details.`}
@@ -89,7 +89,7 @@ export default function WorkerCard({
           ref={ref}
           size={size}
           animate={isHovered ? "always" : undefined}
-          expression={expressions[worker.status] || idle}
+          expression={expressions[worker.status]}
         />
       </div>
 

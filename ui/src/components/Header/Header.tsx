@@ -48,7 +48,7 @@ export default function Header({
           <p className={styles.subtitle}>
             {totalWorkers === 1
               ? "1 active worker in cluster"
-              : `${totalWorkers} active workers in cluster`}
+              : `${String(totalWorkers)} active workers in cluster`}
           </p>
         </div>
       </div>
@@ -64,14 +64,14 @@ export default function Header({
             className={styles.searchInput}
             placeholder="Search by name, status, or service..."
             value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
+            onChange={(e) => { onSearchChange(e.target.value); }}
             aria-label="Search workers"
           />
           {searchQuery && (
             <button
               type="button"
               className={styles.clearBtn}
-              onClick={() => onSearchChange("")}
+              onClick={() => { onSearchChange(""); }}
               aria-label="Clear search"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

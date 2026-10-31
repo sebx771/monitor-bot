@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type SyntheticEvent } from "react";
 import type { LoginCredentials } from "../../models/Auth";
 import styles from "./LoginForm.module.css";
 
@@ -13,20 +13,28 @@ export default function LoginForm({ onLogin, onClose, error }: LoginFormProps) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
+    setSubmissionError(null);
     try {
       await onLogin({ username, password });
+    } catch (error: unknown) {
+      setSubmissionError(error instanceof Error ? error.message : "Login failed.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <form className={styles.form} onSubmit={handleSubmit} noValidate>
+    <form
+      className={styles.form}
+      onSubmit={(event) => { void handleSubmit(event); }}
+      noValidate
+    >
       <h2 className={styles.title}>Admin Login</h2>
       <p className={styles.subtitle}>Sign in to manage worker actions</p>
 
@@ -39,7 +47,7 @@ export default function LoginForm({ onLogin, onClose, error }: LoginFormProps) {
           type="text"
           className={styles.input}
           value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          onChange={(e) => { setUsername(e.target.value); }}
           autoComplete="username"
           aria-label="Username"
           required
@@ -56,7 +64,7 @@ export default function LoginForm({ onLogin, onClose, error }: LoginFormProps) {
             type={showPassword ? "text" : "password"}
             className={styles.input}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => { setPassword(e.target.value); }}
             autoComplete="current-password"
             aria-label="Password"
             required
@@ -64,7 +72,7 @@ export default function LoginForm({ onLogin, onClose, error }: LoginFormProps) {
           <button
             type="button"
             className={styles.toggleBtn}
-            onClick={() => setShowPassword((v) => !v)}
+            onClick={() => { setShowPassword((v) => !v); }}
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? (
@@ -83,9 +91,9 @@ export default function LoginForm({ onLogin, onClose, error }: LoginFormProps) {
         </div>
       </div>
 
-      {error && (
+      {(error || submissionError) && (
         <p className={styles.errorMessage} role="alert">
-          {error}
+          {error || submissionError}
         </p>
       )}
 

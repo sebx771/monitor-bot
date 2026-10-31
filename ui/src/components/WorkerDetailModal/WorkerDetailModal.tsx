@@ -93,7 +93,7 @@ export default function WorkerDetailModal({
                 id={`trigger-btn-${worker.id}`}
                 type="button"
                 className={styles.triggerBtn}
-                onClick={handleTrigger}
+                onClick={() => { void handleTrigger(); }}
                 disabled={isTriggering}
                 aria-busy={isTriggering}
               >

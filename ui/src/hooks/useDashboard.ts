@@ -56,7 +56,27 @@ export function useDashboard() {
 
   useEffect(() => {
     const controller = new AbortController();
-    void loadWorkers(false, controller.signal);
+
+    const loadInitialWorkers = async () => {
+      try {
+        const nextWorkers = await fetchWorkerStatus(controller.signal);
+        if (controller.signal.aborted) return;
+
+        setWorkers(nextWorkers);
+        setLoadError(null);
+      } catch (error: unknown) {
+        if (controller.signal.aborted) return;
+        setRefreshNotification(null);
+        setLoadError(error instanceof Error ? error.message : "Failed to load workers.");
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+          setIsRefreshing(false);
+        }
+      }
+    };
+
+    void loadInitialWorkers();
 
     return () => {
       controller.abort();

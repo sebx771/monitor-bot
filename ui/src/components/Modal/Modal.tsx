@@ -43,7 +43,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
         >
             <div
                 className={styles.content}
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); }}
             >
                 <header className={styles.header}>
                     {title && <h3 className={styles.title}>{title}</h3>}

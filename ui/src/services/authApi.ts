@@ -20,7 +20,7 @@ export async function login(credentials: LoginCredentials): Promise<void> {
   }
 
   if (!response.ok) {
-    throw new Error(`Login failed (${response.status})`);
+    throw new Error(`Login failed (${String(response.status)})`);
   }
 }
 
@@ -37,7 +37,7 @@ export async function logout(): Promise<void> {
   });
 
   if (!response.ok) {
-    throw new Error(`Logout failed (${response.status})`);
+    throw new Error(`Logout failed (${String(response.status)})`);
   }
 }
 

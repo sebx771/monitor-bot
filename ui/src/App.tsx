@@ -77,7 +77,7 @@ export default function App() {
           isAuthenticated={isAuthenticated}
           isAuthLoading={isAuthLoading}
           onLoginClick={handleLoginClick}
-          onLogout={handleLogout}
+          onLogout={() => { void handleLogout(); }}
         />
 
         <main className={styles.content}>

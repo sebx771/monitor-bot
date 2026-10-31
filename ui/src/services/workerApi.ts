@@ -2,6 +2,14 @@ import type { TriggerResponse, Worker } from "../models/Worker";
 import { API_BASE_URL } from "../core/config";
 import { mapApiWorkers } from "./workerMapper";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readErrorMessage(data: Record<string, unknown>, fallback: string): string {
+  return typeof data.error === "string" ? data.error : fallback;
+}
+
 /**
  * Sends a manual trigger request for a specific worker.
  * Endpoint: POST /api/v1/workers/:id/trigger
@@ -18,9 +26,12 @@ export async function triggerWorker(workerId: string): Promise<TriggerResponse> 
 
   let data: Record<string, unknown> = {};
   try {
-    data = await response.json();
+    const responseData: unknown = await response.json();
+    if (isRecord(responseData)) {
+      data = responseData;
+    }
   } catch {
-    // If response is not JSON
+    // Error responses may not include a JSON body.
   }
 
   if (response.status === 401) {
@@ -32,14 +43,14 @@ export async function triggerWorker(workerId: string): Promise<TriggerResponse> 
   }
 
   if (response.status === 409) {
-    throw new Error((data.error as string) || "Worker is already busy or a trigger is already pending.");
+    throw new Error(readErrorMessage(data, "Worker is already busy or a trigger is already pending."));
   }
 
   if (response.status === 404) {
-    throw new Error((data.error as string) || `Worker "${workerId}" not found or inactive.`);
+    throw new Error(readErrorMessage(data, `Worker "${workerId}" not found or inactive.`));
   }
 
-  throw new Error((data.error as string) || `Failed to trigger worker (${response.status})`);
+  throw new Error(readErrorMessage(data, `Failed to trigger worker (${String(response.status)})`));
 }
 
 /**
@@ -57,7 +68,7 @@ export async function fetchWorkerStatus(signal?: AbortSignal): Promise<Worker[]>
   });
 
   if (!response.ok) {
-    throw new Error(`Error ${response.status}: ${response.statusText}`);
+    throw new Error(`Error ${String(response.status)}: ${response.statusText}`);
   }
 
   const data: unknown = await response.json();
