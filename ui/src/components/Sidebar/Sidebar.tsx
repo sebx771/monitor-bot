@@ -98,7 +98,7 @@ export default function Sidebar({ isOpen, workerCount = 4 }: SidebarProps) {
           <span className={styles.statusIndicator} />
           <span className={styles.systemText}>Cluster Operational</span>
         </div>
-        <div className={styles.systemSub}>v1.0.0 • Local Mocks</div>
+        <div className={styles.systemSub}> UI * v1.0.0 </div>
       </div>
     </aside>
   );
