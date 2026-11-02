@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -24,13 +23,22 @@ type AuthHandler struct {
 	authSvc *auth.SessionService
 }
 
-
 func NewAuthHandler(authSvc *auth.SessionService) *AuthHandler {
 	return &AuthHandler{
 		authSvc: authSvc,
 	}
 }
 
+func setSessionCookie(c *gin.Context, value string, maxAge int) {
+	secure := gin.Mode() == gin.ReleaseMode
+	sameSite := http.SameSiteLaxMode
+	if secure {
+		sameSite = http.SameSiteNoneMode
+	}
+
+	c.SetSameSite(sameSite)
+	c.SetCookie(sessionCookieName, value, maxAge, "/", "", secure, true)
+}
 
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req loginRequest
@@ -45,21 +53,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	isProduction := os.Getenv("GIN_MODE") == "release"
-	c.SetCookie(
-		sessionCookieName,
-		sessionID,
-		sessionMaxAge,
-		"/",
-		"",
-		isProduction,
-		true, // HttpOnly
-	)
-	c.SetSameSite(http.SameSiteStrictMode)
+	setSessionCookie(c, sessionID, sessionMaxAge)
 
 	c.JSON(http.StatusOK, gin.H{"message": "authenticated"})
 }
-
 
 func (h *AuthHandler) Logout(c *gin.Context) {
 	sessionID, err := c.Cookie(sessionCookieName)
@@ -67,13 +64,10 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		h.authSvc.Logout(sessionID)
 	}
 
-	isProduction := os.Getenv("GIN_MODE") == "release"
-	c.SetCookie(sessionCookieName, "", -1, "/", "", isProduction, true)
-	c.SetSameSite(http.SameSiteStrictMode)
+	setSessionCookie(c, "", -1)
 
 	c.JSON(http.StatusOK, gin.H{"message": "logged out"})
 }
-
 
 func (h *AuthHandler) Me(c *gin.Context) {
 	sessionID, err := c.Cookie(sessionCookieName)
