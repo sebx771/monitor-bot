@@ -5,18 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.7.0] - 2026-11-03
 
 ### Added
 
-- **Paused worker statuses** (`cmd/main.go`, `internal/status`): disabled modules are now included in `GET /api/v1/status` with a `paused` status. The API remains available when all modules are disabled. This entry covers backend changes only; the UI is still under development and is not included.
-
-- **Admin authentication for manual worker triggers** (`internal/auth`, `internal/api`): added bcrypt-backed credential verification, in-memory sessions, and session-protected trigger endpoints.
-- **Dashboard admin sign-in** (`ui`): added login/logout controls and a login modal backed by the admin session API; status endpoints remain public.
+- **Paused worker statuses** (`cmd/main.go`, `internal/status`): disabled modules are included in `GET /api/v1/status` with a `paused` status. The API remains available when all modules are disabled.
+- **Admin authentication for worker triggers** (`internal/auth`, `internal/api`): added bcrypt-backed credential verification, in-memory eight-hour sessions, and login, logout, and session-check endpoints. Worker status remains public; manual triggers require an admin session.
+- **Dashboard admin controls** (`ui`): added sign-in, sign-out, session restoration, and the ability for authenticated admins to trigger workers from the dashboard.
 
 ### Changed
 
 - **API handler organization** (`internal/api`): split the former handler into dedicated authentication and status handlers.
+- **Production dashboard/API integration** (`internal/api/router.go`): allowed credentialed requests from the deployed UI.
+
+### Fixed
+
+- **Cross-site session cookies** (`internal/api/handlers/auth.go`): configured secure cookies for production so sessions work across the deployed UI and API.
 
 ## [1.6.0] - 2026-10-16
 
