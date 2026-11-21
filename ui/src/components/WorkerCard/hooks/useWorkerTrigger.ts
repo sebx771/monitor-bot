@@ -10,39 +10,52 @@ export interface TriggerNotice {
 interface UseWorkerTriggerProps {
   worker: Worker;
   onCustomTrigger?: (workerId: string) => Promise<void> | void;
+  activeConfirmationWorkerId?: string | null;
+  onRequestConfirmation?: (workerId: string) => void;
+  onClearConfirmation?: () => void;
 }
 
-export function useWorkerTrigger({ worker, onCustomTrigger }: UseWorkerTriggerProps) {
-  const [isTriggering, setIsTriggering] = useState(false);
+export function useWorkerTrigger({
+  worker,
+  onCustomTrigger,
+  activeConfirmationWorkerId,
+  onRequestConfirmation,
+  onClearConfirmation,
+}: UseWorkerTriggerProps) {
+  const [isExecuting, setIsExecuting] = useState(false);
   const [notice, setNotice] = useState<TriggerNotice | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [localConfirming, setLocalConfirming] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isOperational = worker.status === WorkerStatus.OPERATIONAL;
+  const isConfirming = activeConfirmationWorkerId !== undefined
+    ? activeConfirmationWorkerId === worker.id
+    : localConfirming;
 
-  // Clean up any pending timeout when component unmounts
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      clearTimer();
     };
-  }, []);
+  }, [clearTimer]);
 
-  const clearNoticeAfterDelay = useCallback((delayMs: number = 3500) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    timeoutRef.current = setTimeout(() => {
-      setNotice(null);
-    }, delayMs);
-  }, []);
+  const cancelConfirmation = useCallback(() => {
+    clearTimer();
+    setLocalConfirming(false);
+    onClearConfirmation?.();
+  }, [clearTimer, onClearConfirmation]);
 
   const executeTrigger = useCallback(async () => {
-    if (!isOperational || isTriggering) {
-      return;
-    }
+    cancelConfirmation();
+    if (!isOperational || isExecuting) return;
 
-    setIsTriggering(true);
+    setIsExecuting(true);
     setNotice(null);
 
     try {
@@ -51,39 +64,48 @@ export function useWorkerTrigger({ worker, onCustomTrigger }: UseWorkerTriggerPr
       } else {
         await triggerWorker(worker.id);
       }
-
-      setNotice({
-        type: "success",
-        text: "Cycle queued successfully!",
-      });
-      clearNoticeAfterDelay(3000);
+      setNotice({ type: "success", text: "Cycle queued!" });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to trigger worker";
-      const isConflict =
-        message.toLowerCase().includes("ocupado") ||
-        message.toLowerCase().includes("busy");
-
-      setNotice({
-        type: isConflict ? "conflict" : "error",
-        text: message,
-      });
-      clearNoticeAfterDelay(4000);
+      const isConflict = message.toLowerCase().includes("ocupado") || message.toLowerCase().includes("busy");
+      setNotice({ type: isConflict ? "conflict" : "error", text: message });
     } finally {
-      setIsTriggering(false);
+      setIsExecuting(false);
+      timerRef.current = setTimeout(() => {
+        setNotice(null);
+      }, 3000);
     }
-  }, [isOperational, isTriggering, onCustomTrigger, worker.id, clearNoticeAfterDelay]);
+  }, [cancelConfirmation, isOperational, isExecuting, onCustomTrigger, worker.id]);
 
-  const tooltipText = isTriggering
+  const handleTriggerClick = useCallback(() => {
+    if (isExecuting || !isOperational) return;
+
+    if (isConfirming) {
+      void executeTrigger();
+    } else {
+      setLocalConfirming(true);
+      onRequestConfirmation?.(worker.id);
+      clearTimer();
+      timerRef.current = setTimeout(() => {
+        cancelConfirmation();
+      }, 3000);
+    }
+  }, [isExecuting, isOperational, isConfirming, executeTrigger, onRequestConfirmation, worker.id, clearTimer, cancelConfirmation]);
+
+  const tooltipText = isExecuting
     ? "Sending request..."
+    : isConfirming
+    ? "Click again to confirm immediate trigger (3s)"
     : !isOperational
     ? `Trigger unavailable: worker in "${worker.status}" state`
     : `Trigger worker ${worker.name} immediately`;
 
   return {
     isOperational,
-    isTriggering,
+    isExecuting,
+    isConfirming,
     notice,
-    executeTrigger,
+    handleTriggerClick,
     tooltipText,
   };
 }
