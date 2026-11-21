@@ -1,0 +1,205 @@
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  background-color: #202024;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
+
+.table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+  color: #f4f4f5;
+}
+
+.table th {
+  padding: 0.85rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #a1a1aa;
+  background-color: #18181b;
+  border-bottom: 1px solid #27272a;
+}
+
+.table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #27272a;
+  vertical-align: middle;
+}
+
+.row {
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.row:hover {
+  background-color: #27272a;
+}
+
+.row:last-child td {
+  border-bottom: none;
+}
+
+.workerCell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.microAvatarWrapper {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  background-color: #18181b;
+}
+
+.ringOperational {
+  border: 2px solid #10b981;
+}
+
+.ringDegraded {
+  border: 2px solid #f59e0b;
+}
+
+.ringError {
+  border: 2px solid #ef4444;
+}
+
+.ringPaused {
+  border: 2px solid #71717a;
+}
+
+.workerName {
+  font-weight: 600;
+  color: #f4f4f5;
+}
+
+.workerId {
+  font-size: 0.75rem;
+  color: #71717a;
+  font-family: monospace;
+}
+
+.servicesList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.serviceBadge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background-color: #27272a;
+  color: #d4d4d8;
+  border: 1px solid #3f3f46;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.pillDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.statusOperational {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+.statusOperational .pillDot {
+  background-color: #10b981;
+}
+
+.statusDegraded {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+.statusDegraded .pillDot {
+  background-color: #f59e0b;
+}
+
+.statusError {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+.statusError .pillDot {
+  background-color: #ef4444;
+}
+
+.statusPaused {
+  background-color: rgba(113, 113, 122, 0.15);
+  color: #a1a1aa;
+}
+.statusPaused .pillDot {
+  background-color: #71717a;
+}
+
+.timestamp {
+  font-size: 0.8125rem;
+  color: #a1a1aa;
+  white-space: nowrap;
+}
+
+.actionsCell {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.triggerBtn {
+  background-color: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  color: #f4f4f5;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 150ms ease;
+}
+
+.triggerBtn:hover:not(:disabled) {
+  background-color: #3f3f46;
+  border-color: #52525b;
+}
+
+.triggerBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.triggerBtnConfirming {
+  background-color: #d97706 !important;
+  border-color: #f59e0b !important;
+  color: #ffffff !important;
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  from { opacity: 0.9; }
+  to { opacity: 1; transform: scale(1.02); }
+}

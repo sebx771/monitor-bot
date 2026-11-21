@@ -5,16 +5,17 @@ import { idle, mad, sleepy, thinking } from "blobatar/expression";
 import { WorkerStatus, type Worker } from "../../models/Worker";
 import { useWorkerTrigger } from "./hooks/useWorkerTrigger";
 import { useGaze } from "@blobatar/react/gaze";
-
 import styles from "./WorkerCard.module.css";
 import "blobatar/gaze.css";
-
 
 export interface WorkerCardProps {
   worker: Worker;
   size?: number;
   onSelect?: (worker: Worker) => void;
   onTrigger?: (workerId: string) => Promise<void> | void;
+  activeConfirmationWorkerId?: string | null;
+  onRequestConfirmation?: (workerId: string) => void;
+  onClearConfirmation?: () => void;
 }
 
 const expressions = {
@@ -36,22 +37,29 @@ export default function WorkerCard({
   size = 160,
   onSelect,
   onTrigger,
+  activeConfirmationWorkerId,
+  onRequestConfirmation,
+  onClearConfirmation,
 }: WorkerCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const {
     isOperational,
-    isTriggering,
+    isExecuting,
+    isConfirming,
     notice,
-    executeTrigger,
+    handleTriggerClick,
     tooltipText,
-  } = useWorkerTrigger({ worker, onCustomTrigger: onTrigger });
-  const { ref } = useGaze({
-  travel: 10,
-  lookAt: "pointer",
-});
-  const handleCardClick = () => {
-    onSelect?.(worker);
-  };
+  } = useWorkerTrigger({
+    worker,
+    onCustomTrigger: onTrigger,
+    activeConfirmationWorkerId,
+    onRequestConfirmation,
+    onClearConfirmation,
+  });
+
+  const { ref } = useGaze({ travel: 10, lookAt: "pointer" });
+
+  const handleCardClick = () => { onSelect?.(worker); };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -65,9 +73,9 @@ export default function WorkerCard({
     onSelect?.(worker);
   };
 
-  const handleTriggerClick = (e: MouseEvent<HTMLButtonElement>) => {
+  const onTriggerClick = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    void executeTrigger();
+    handleTriggerClick();
   };
 
   const statusStyle = statusClassMap[worker.status] || styles.statusPaused;
@@ -118,17 +126,19 @@ export default function WorkerCard({
       <div className={styles.actions}>
         <button
           type="button"
-          className={`${styles.button} ${styles.triggerBtn}`}
-          onClick={handleTriggerClick}
-          disabled={!isOperational || isTriggering}
+          className={`${styles.button} ${styles.triggerBtn} ${isConfirming ? styles.triggerBtnConfirming : ""}`}
+          onClick={onTriggerClick}
+          disabled={!isOperational || isExecuting}
           title={tooltipText}
-          aria-label={`Manual trigger for ${worker.name}`}
+          aria-label={`Trigger ${worker.name}`}
         >
-          {isTriggering ? (
+          {isExecuting ? (
             <>
               <span className={styles.spinner} />
               <span>Triggering...</span>
             </>
+          ) : isConfirming ? (
+            <span>Confirm? (3s)</span>
           ) : (
             <>
               <span>⚡</span>

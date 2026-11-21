@@ -13,6 +13,29 @@
   align-items: center;
   justify-content: space-between;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  transition: all 180ms ease;
+  outline: none;
+}
+
+.statCard:hover {
+  background-color: #27272a;
+  border-color: #3f3f46;
+  transform: translateY(-1px);
+}
+
+.statCard:focus-visible {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.35);
+}
+
+.activeCard {
+  border-color: #a855f7;
+  background-color: rgba(168, 85, 247, 0.08);
+  box-shadow: 0 0 0 1px #a855f7;
 }
 
 .statInfo {
@@ -25,7 +48,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 600;
-  color: #71717a;
+  color: #a1a1aa;
   margin-bottom: 0.25rem;
 }
 

@@ -29,31 +29,6 @@
   box-sizing: border-box;
 }
 
-.toast {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  background-color: #27272a;
-  border: 1px solid #3f3f46;
-  color: #e4e4e7;
-  font-size: 0.875rem;
-  animation: slideDown 0.25s ease-out;
-}
-
-.toastSuccess {
-  border-color: rgba(16, 185, 129, 0.4);
-  background-color: rgba(16, 185, 129, 0.1);
-  color: #6ee7b7;
-}
-
-.toastError {
-  border-color: rgba(248, 113, 113, 0.4);
-  background-color: rgba(248, 113, 113, 0.1);
-  color: #fca5a5;
-}
-
 .requestState {
   display: flex;
   flex-direction: column;
@@ -80,6 +55,7 @@
   background-color: #27272a;
   color: #f4f4f5;
   cursor: pointer;
+  transition: background-color 150ms ease;
 }
 
 .retryButton:hover:not(:disabled) {
@@ -91,32 +67,10 @@
   opacity: 0.6;
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .backdrop {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  .content {
-    padding: 1rem;
-  }
-
-  .backdrop {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.65);
-    backdrop-filter: blur(4px);
-    z-index: 9;
-  }
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 40;
 }

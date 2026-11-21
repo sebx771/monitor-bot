@@ -10,6 +10,12 @@ export * from "./WorkerDetailModal";
 export { default as WorkerGrid } from "./WorkerGrid";
 export * from "./WorkerGrid";
 
+export { default as WorkerTable } from "./WorkerTable";
+export * from "./WorkerTable";
+
+export { default as ToastPortal } from "./Toast";
+export * from "./Toast";
+
 export { default as Sidebar } from "./Sidebar";
 export * from "./Sidebar";
 
@@ -20,10 +26,4 @@ export { default as MetricsOverview } from "./MetricsOverview";
 export * from "./MetricsOverview";
 
 export { default as LoginForm } from "./LoginForm/LoginForm";
-
 export { default as LoginModal } from "./LoginModal/LoginModal";
-
-
-
-
-

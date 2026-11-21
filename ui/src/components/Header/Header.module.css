@@ -245,3 +245,94 @@
   color: #f87171;
 }
 
+
+
+/* ── Refresh Control & Cadence Dropdown ──────────────────────── */
+
+.refreshGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cadenceSelect {
+  background-color: #18181b;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  color: #a1a1aa;
+  padding: 0.55rem 0.5rem;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.cadenceSelect:hover {
+  border-color: #52525b;
+  color: #f4f4f5;
+}
+
+.cadenceSelect:focus-visible {
+  border-color: #a855f7;
+}
+
+.pausedAlertBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
+  background-color: rgba(245, 158, 11, 0.15);
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  color: #fbbf24;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pausedAlertBadge:hover {
+  background-color: rgba(245, 158, 11, 0.25);
+  transform: translateY(-1px);
+}
+
+/* ── View Density Switcher ────────────────────────────────────── */
+
+.densityToggle {
+  display: inline-flex;
+  align-items: center;
+  background-color: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  padding: 0.2rem;
+  gap: 0.2rem;
+}
+
+.densityBtn {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #71717a;
+  padding: 0.35rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.densityBtn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.densityBtn:hover {
+  color: #e4e4e7;
+}
+
+.activeDensity {
+  background-color: #27272a;
+  color: #f4f4f5;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}

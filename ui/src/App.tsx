@@ -7,8 +7,10 @@ import {
   Header,
   MetricsOverview,
   WorkerGrid,
+  WorkerTable,
   WorkerDetailModal,
   LoginModal,
+  ToastPortal,
 } from "./components";
 import styles from "./App.module.css";
 
@@ -19,61 +21,66 @@ export default function App() {
     stats,
     searchQuery,
     setSearchQuery,
+    statusFilter,
+    toggleStatusFilter,
+    clearAllFilters,
+    hasActiveFilters,
     isLoading,
     isRefreshing,
     loadError,
-    refreshNotification,
-    handleRefresh,
+    toasts,
+    dismissToast,
+    viewDensity,
+    handleDensityChange,
+    refreshInterval,
+    handleIntervalChange,
+    isPausedDueToErrors,
+    resetErrorCountAndResume,
+    handleManualRefresh,
     selectedWorker,
     handleSelectWorker,
     handleCloseModal,
     sidebarOpen,
     handleToggleSidebar,
     handleCloseSidebar,
+    activeConfirmationWorkerId,
+    onRequestConfirmation,
+    onClearConfirmation,
   } = useDashboard();
 
   const { isAuthenticated, isLoading: isAuthLoading, error: authError, handleLogin, handleLogout } = useAuth();
-
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const handleLoginSubmit = useCallback(async (credentials: LoginCredentials) => {
     await handleLogin(credentials);
-    // handleLogin throws on failure, so reaching this line means success
     setIsLoginModalOpen(false);
   }, [handleLogin]);
 
-  const handleLoginClick = useCallback(() => {
-    setIsLoginModalOpen(true);
-  }, []);
-
-  const handleCloseLoginModal = useCallback(() => {
-    setIsLoginModalOpen(false);
-  }, []);
+  const handleLoginClick = useCallback(() => { setIsLoginModalOpen(true); }, []);
+  const handleCloseLoginModal = useCallback(() => { setIsLoginModalOpen(false); }, []);
 
   return (
     <div className={styles.layout}>
       {sidebarOpen && (
-        <div
-          className={styles.backdrop}
-          onClick={handleCloseSidebar}
-          aria-hidden="true"
-        />
+        <div className={styles.backdrop} onClick={handleCloseSidebar} aria-hidden="true" />
       )}
 
-      <Sidebar
-        isOpen={sidebarOpen}
-        onClose={handleCloseSidebar}
-        workerCount={workers.length}
-      />
+      <Sidebar isOpen={sidebarOpen} onClose={handleCloseSidebar} workerCount={workers.length} />
 
       <div className={styles.mainArea}>
         <Header
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          onRefresh={handleRefresh}
+          onRefresh={handleManualRefresh}
           isRefreshing={isLoading || isRefreshing}
           totalWorkers={filteredWorkers.length}
           onToggleSidebar={handleToggleSidebar}
+          viewDensity={viewDensity}
+          onViewDensityChange={handleDensityChange}
+          refreshInterval={refreshInterval}
+          onIntervalChange={handleIntervalChange}
+          isPausedDueToErrors={isPausedDueToErrors}
+          onResetErrorsAndResume={resetErrorCountAndResume}
           isAuthenticated={isAuthenticated}
           isAuthLoading={isAuthLoading}
           onLoginClick={handleLoginClick}
@@ -81,24 +88,9 @@ export default function App() {
         />
 
         <main className={styles.content}>
-          {refreshNotification && (
-            <div className={`${styles.toast} ${styles.toastSuccess}`} role="status">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              <span>{refreshNotification}</span>
-            </div>
-          )}
-
-          {loadError && workers.length > 0 && (
-            <div className={`${styles.toast} ${styles.toastError}`} role="alert">
-              <span>Could not refresh workers: {loadError}</span>
-            </div>
-          )}
-
           {isLoading && workers.length === 0 ? (
             <div className={styles.requestState} role="status">
-              Loading workers from the API...
+              Loading workers from the cluster...
             </div>
           ) : loadError && workers.length === 0 ? (
             <div className={styles.requestState} role="alert">
@@ -106,7 +98,7 @@ export default function App() {
               <button
                 type="button"
                 className={styles.retryButton}
-                onClick={handleRefresh}
+                onClick={handleManualRefresh}
                 disabled={isRefreshing}
               >
                 Retry
@@ -114,15 +106,37 @@ export default function App() {
             </div>
           ) : (
             <>
-              <MetricsOverview stats={stats} />
-              <WorkerGrid
-                workers={filteredWorkers}
-                onWorkerClick={handleSelectWorker}
+              <MetricsOverview
+                stats={stats}
+                activeFilter={statusFilter}
+                onToggleFilter={toggleStatusFilter}
               />
+
+              {viewDensity === "grid" ? (
+                <WorkerGrid
+                  workers={filteredWorkers}
+                  onWorkerClick={handleSelectWorker}
+                  activeConfirmationWorkerId={activeConfirmationWorkerId}
+                  onRequestConfirmation={onRequestConfirmation}
+                  onClearConfirmation={onClearConfirmation}
+                  onClearFilters={clearAllFilters}
+                  hasActiveFilters={hasActiveFilters}
+                />
+              ) : (
+                <WorkerTable
+                  workers={filteredWorkers}
+                  onSelect={handleSelectWorker}
+                  activeConfirmationWorkerId={activeConfirmationWorkerId}
+                  onRequestConfirmation={onRequestConfirmation}
+                  onClearConfirmation={onClearConfirmation}
+                />
+              )}
             </>
           )}
         </main>
       </div>
+
+      <ToastPortal toasts={toasts} onDismiss={dismissToast} />
 
       {selectedWorker && (
         <WorkerDetailModal
